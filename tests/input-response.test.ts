@@ -28,6 +28,18 @@ function harness() {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Immediate lane response, independently of rhythm scoring", () => {
+  it("adds bounded sparkles on every Perfect and keeps reduced effects particle-free", () => {
+    const { scene } = harness();
+    const state=scene as unknown as { sparks: unknown[]; perfectFlash: number };
+    scene.hit(1,"perfect",false);
+    expect(state.sparks.length).toBe(16);
+    expect(state.perfectFlash).toBe(1);
+    for(let i=0;i<20;i++)scene.hit(1,"perfect",false);
+    expect(state.sparks.length).toBeLessThanOrEqual(65);
+    scene.reset(); scene.hit(1,"perfect",true);
+    expect(state.sparks).toHaveLength(0);
+    expect(state.perfectFlash).toBe(1);
+  });
   it("can reset on initial home before Phaser initializes its renderer", () => {
     const scene = new RoadScene();
     Object.assign(scene, { scale: undefined });
@@ -38,7 +50,7 @@ describe("Immediate lane response, independently of rhythm scoring", () => {
     const { scene, ball, frame } = harness();
     const run = new Run([{ id: 0, time: 2, lane: 0, crystal: false, obstacles: [] }]);
     scene.tap(0);
-    expect(run.tap(0, 1)).toBeUndefined();
+    expect(run.tap(0, 1)).toEqual([]);
     frame();
     expect(ball.x).toBeLessThan(195);
     expect(run.score).toBe(0);

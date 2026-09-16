@@ -11,6 +11,8 @@ export class Conductor {
   private silent = false;
   private muted = false;
   private loadPromise?: Promise<void>;
+  private loadedFile = "";
+  private loadGeneration = 0;
   onInterruption?: () => void;
 
   async unlock() {
@@ -26,11 +28,17 @@ export class Conductor {
     }
     if (this.context.state !== "running") await this.context.resume();
   }
-  async load(onProgress: (progress: number) => void) {
-    if (this.buffer) return;
-    if (this.loadPromise) return this.loadPromise;
-    this.loadPromise = (async () => {
-      const response = await fetch(assetUrl("audio/first-light.mp3"));
+  async load(onProgress: (progress: number) => void, file = "first-light.mp3"): Promise<void> {
+    const request = ++this.loadGeneration;
+    if (this.loadPromise) {
+      try { await this.loadPromise; } catch { /* A different track may still load. */ }
+    }
+    // Only the newest waiting selection may start a download. A → B → A
+    // must never replace A's playing buffer with a late, cancelled B response.
+    if (request !== this.loadGeneration) return;
+    if (this.buffer && this.loadedFile === file) { onProgress(1); return; }
+    const pending = (async () => {
+      const response = await fetch(assetUrl(`audio/${file}`));
       if (!response.ok) throw new Error("No se pudo descargar la canción.");
       const total = Number(response.headers.get("content-length"));
       let bytes: ArrayBuffer;
@@ -58,12 +66,14 @@ export class Conductor {
       }
       if (!this.context) await this.unlock();
       this.buffer = await this.context!.decodeAudioData(bytes);
+      this.loadedFile = file;
       onProgress(1);
     })();
+    this.loadPromise = pending;
     try {
-      await this.loadPromise;
+      await pending;
     } finally {
-      this.loadPromise = undefined;
+      if (this.loadPromise === pending) this.loadPromise = undefined;
     }
   }
   get time() {
@@ -132,6 +142,12 @@ export class Conductor {
             : 120,
       now,
     );
+    if (kind === "miss") {
+      // Original two-stage falling chirp: arcade damage, no sampled game audio.
+      osc.frequency.setValueAtTime(235, now);
+      osc.frequency.exponentialRampToValueAtTime(95, now + 0.055);
+      osc.frequency.exponentialRampToValueAtTime(52, now + 0.14);
+    }
     envelope.gain.setValueAtTime(0.0001, now);
     envelope.gain.exponentialRampToValueAtTime(
       kind === "miss" ? 0.12 : 0.045,

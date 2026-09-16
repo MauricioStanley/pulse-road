@@ -217,6 +217,57 @@
   .screen a {
     pointer-events: auto;
   }
+  .screen select {
+    pointer-events: auto;
+  }
+  .level-picker {
+    margin: 0 0 12px;
+    text-align: left;
+    padding: 10px 13px;
+    background: var(--canvas-overlay);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .level-picker label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+  .level-picker select {
+    font: inherit;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--canvas);
+    border: 0;
+    width: 100%;
+    min-height: 44px;
+    cursor: pointer;
+    accent-color: var(--mint);
+  }
+  .level-picker p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .motivation {
+    position: absolute;
+    top: 26%;
+    left: 16px;
+    right: 16px;
+    text-align: center;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    text-shadow: 0 2px 8px var(--canvas);
+  }
+  .motivation.visible { opacity: 1; }
+  .song-label #track-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #song-time { flex-shrink: 0; }
   .home-heading {
     position: absolute;
     top: 13%;
@@ -1205,6 +1256,10 @@
     }
   }
   @media (max-height: 720px) {
+    .level-picker { padding: 5px 10px; margin-bottom: 8px; }
+    .level-picker label { display: none; }
+    .level-picker p { font-size: 11px; }
+    .home-heading { top: 12%; }
     .home-heading h1 {
       font-size: 65px;
     }
@@ -1301,6 +1356,9 @@
     .results-panel h2 {
       font-size: 23px;
     }
+  }
+  @media (max-height: 650px) {
+    .home-heading p { display: none; }
   }
   @media (orientation: landscape) and (max-height: 560px) and (pointer: coarse) {
     .cabinet {

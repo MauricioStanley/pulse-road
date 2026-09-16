@@ -9,6 +9,7 @@ class FakeAudioContext {
   onstatechange?: () => void;
   sources: { started: number[]; stopped: boolean; disconnected: boolean }[] =
     [];
+  oscillators: { frequency: { setValueAtTime: ReturnType<typeof vi.fn>; exponentialRampToValueAtTime: ReturnType<typeof vi.fn> }; disconnect: ReturnType<typeof vi.fn>; onended?: () => void }[] = [];
   constructor() {
     FakeAudioContext.instance = this;
   }
@@ -17,7 +18,12 @@ class FakeAudioContext {
     this.onstatechange?.();
   }
   createGain() {
-    return { gain: { value: 1, setTargetAtTime: vi.fn() }, connect: vi.fn() };
+    return { gain: { value: 1, setTargetAtTime: vi.fn(), setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: vi.fn(), disconnect: vi.fn() };
+  }
+  createOscillator() {
+    const oscillator = { type: "sine", frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: vi.fn(), disconnect: vi.fn(), start: vi.fn(), stop: vi.fn(), onended: undefined as undefined | (() => void) };
+    this.oscillators.push(oscillator);
+    return oscillator;
   }
   async decodeAudioData() {
     return { duration: 80 };
@@ -52,6 +58,38 @@ beforeEach(() => {
   );
 });
 describe("Audio transport", () => {
+  it("keeps the newest selection when a cancelled A → B → A load overlaps", async () => {
+    const c = new Conductor(); await c.unlock();
+    await Promise.all([
+      c.load(() => {}, "tiny-orbit.mp3"),
+      c.load(() => {}, "zero-threshold.mp3"),
+      c.load(() => {}, "tiny-orbit.mp3"),
+    ]);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await c.load(() => {}, "tiny-orbit.mp3");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it("makes one original damage chirp per miss, disconnects it and obeys mute", async () => {
+    const c = new Conductor(); await c.unlock();
+    c.tick("miss"); c.tick("miss");
+    const ctx=FakeAudioContext.instance;
+    expect(ctx.oscillators).toHaveLength(2);
+    expect(ctx.oscillators[0].frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(52,0.14);
+    ctx.oscillators[0].onended?.();
+    expect(ctx.oscillators[0].disconnect).toHaveBeenCalled();
+    c.mute(true); c.tick("miss");
+    expect(ctx.oscillators).toHaveLength(2);
+  });
+  it("loads different tracks in order without playing the stale buffer", async () => {
+    const c = new Conductor();
+    await c.unlock();
+    await Promise.all([c.load(() => {}, "tiny-orbit.mp3"), c.load(() => {}, "zero-threshold.mp3")]);
+    expect(vi.mocked(fetch).mock.calls.map(args => args[0])).toEqual(["/audio/tiny-orbit.mp3", "/audio/zero-threshold.mp3"]);
+    await c.load(() => {}, "zero-threshold.mp3");
+    expect(fetch).toHaveBeenCalledTimes(2);
+    await c.load(() => {}, "tiny-orbit.mp3");
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
   it("loads once, follows the audio clock and resumes at the exact offset", async () => {
     const c = new Conductor();
     await c.unlock();

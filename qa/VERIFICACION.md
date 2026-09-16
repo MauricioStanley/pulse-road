@@ -2,7 +2,24 @@
 
 Fecha: 16 de septiembre de 2026. Pruebas de navegador realizadas en el navegador integrado de Codex, con resoluciones CSS de 390×844, 320×568 y 1280×900. Esas resoluciones no implican pruebas en equipos físicos.
 
-## Actualización: colores y publicación
+## Actualización vigente: cuatro dificultades y aterrizajes
+
+Esta sección sustituye las reglas y cifras de las versiones históricas que siguen debajo.
+
+- **52/52 pruebas automáticas aprobadas**: selección anticipada, salir del carril antes de aterrizar, corrección de entrada, permanencia entre notas, asentamiento visual, margen tardío, muerte, puntos, cristales y combos. Reproducción determinista perfecta de las cuatro pistas a 30/60/120 FPS, densidad creciente, separación mínima de 1/6 s, objetivos únicos y ningún obstáculo en el carril válido. También se comprueban el límite de partículas y la supresión de partículas con efectos reducidos.
+- Audio: cambio secuencial de pistas sin reutilizar buffers incorrectos, cancelaciones rápidas A → B → A, reintento, reloj/pausa, diez reinicios con fuentes desconectadas, un sonido original por fallo, limpieza y silencio. Persistencia de récords, intentos y dificultad, y funcionamiento cuando localStorage está bloqueado.
+- Las cuatro pistas MP3 duran **80,000 s**, verificado con ffprobe. First Light: 1.281.132 bytes; pistas adicionales: aproximadamente 1.121.000 bytes cada una.
+- Navegador: tutorial completo de seis pasos usando entradas anticipadas. Titi completo: **85 Perfectos, 0 fallos, combo 85, 10 cristales, 28.550 puntos, tres estrellas**, con pausas y reanudaciones.
+- Servellon completo en navegador con entradas de teclado controladas: **396 Perfectos, 5 Buenos, 0 fallos, combo 401, 49 cristales, 155.125 puntos, tres estrellas**, con pausas. Esto prueba viabilidad técnica, no facilidad humana ni una curva garantizada de 50 intentos.
+- Se observaron mensajes de ánimo, destello alrededor de la esfera, decoración fuera de los carriles y dos frases distintas en derrotas consecutivas. No se encontraron errores de consola durante las partidas completas.
+- Se inspeccionaron portada y controles a 390×844, 320×568 y 1280×900. Selector accesible también cuando su etiqueta visual se oculta; sin scroll horizontal en 320px. Resultados de derrota con título largo siguen dentro de la pantalla pequeña.
+- **Offline verificado de nuevo**: se apagó el proceso del servidor local; una solicitud HTTP confirmó que no respondía. Se recargó desde el service worker y se iniciaron las cuatro dificultades con sus respectivas canciones desde caché. Se verificó pausa y derrota con el servidor todavía apagado. No se afirma una segunda partida completa offline por cada canción.
+- Capturas: `titi-results.png`, `servellon-results.png`, `levels-gameplay.png`, `levels-small.png`. La captura de portada grande inicial `levels-home.png` precede al pequeño ajuste de posición de la esfera.
+- Precaché: aproximadamente **5,9 MiB** para juego y cuatro canciones. La primera visita requiere internet. Sin muestras de otros juegos ni nuevos servicios externos.
+
+Continúan pendientes las pruebas en Android/iPhone físicos, instalación real, vibración y rendimiento de teléfonos de gama baja. Las resoluciones emuladas y los relojes controlados no reemplazan esas pruebas.
+
+## Historial: colores y publicación
 
 Hay cuatro paletas seleccionables: Menta, Morado, Rojo y Verde. Once pruebas nuevas cubren contraste de textos/controles/peligros, persistencia de cada preferencia, datos antiguos y rutas raíz/subdirectorio. Total: **35/35 pruebas aprobadas**. Compilaciones de producción correctas tanto en `/` como en `/pulse-road/`.
 

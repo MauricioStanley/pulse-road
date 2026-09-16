@@ -22,19 +22,35 @@ npm run preview
 
 Abre http://localhost:4173. No abras `index.html` con doble clic: los módulos y la PWA requieren un servidor.
 
+## Dificultades y música
+
+Elige la dificultad en la portada. Todas duran 80 segundos y tienen música original.
+
+| Nivel | Canción | Tempo | Daño / recuperación |
+| --- | --- | --- | --- |
+| Titi · Fácil | Pequeña Órbita | 96 BPM | −14 / +3 |
+| Medio | First Light | 120 BPM | −20 / +2 |
+| Difícil | Neon Sprint | 150 BPM | −28 / +1 |
+| Servellon · Pesadilla | Umbral Cero | 180 BPM | −40 / +0,5 |
+
+Servellon tiene 401 plataformas, ráfagas de hasta 6 por segundo y patrones fijos con pequeños descansos. Está pensado para aprender mediante muchos intentos; no existe una cantidad garantizada de intentos para dominarlo. Los récords e intentos se guardan por dificultad. Los récords de la versión anterior se conservan en su antigua clave, pero no se mezclan con estas reglas nuevas.
+
 ## Controles y reglas
 
-- Toca izquierda, centro o derecha cuando la plataforma cruce la línea turquesa.
-- La esfera responde a cada toque aunque sea temprano. Moverse no garantiza puntos: Perfecto/Bien sigue dependiendo del momento de la nota. Una nota fallada no mueve la esfera por sí sola.
-- En computadora: flechas izquierda, abajo y derecha; también A, S y D. Escape pausa.
-- Perfecto: diferencia de hasta 80 ms. Bien: hasta 160 ms.
-- Un fallo resta 20 de energía; un acierto recupera 2. Empiezas con 100.
-- Multiplicador ×2 al llegar a 10 aciertos, ×3 a 20 y ×4 a 30.
+- Toca izquierda, centro o derecha **antes** de que llegue la plataforma. El movimiento es inmediato y la puntuación llega al aterrizar.
+- Puedes permanecer en un carril para varias plataformas seguidas. Salirte antes de aterrizar no cuenta como acierto.
+- Perfecto: ya estabas en el carril al aterrizar. Bien: llegaste dentro del pequeño margen tardío. La transición visual tiene 45 ms de asentamiento.
+- Margen tardío por nivel: Titi 200 ms; Medio 140 ms; Difícil 100 ms; Servellon 65 ms. No hay penalización por seleccionar anticipadamente el siguiente carril después del aterrizaje anterior.
+- En computadora: flechas izquierda, abajo y derecha; A, S y D. Escape pausa.
+- Empiezas con 100 de energía. Daño y recuperación dependen del nivel.
+- Multiplicador ×2 con 10 aciertos, ×3 con 20 y ×4 con 30. Perfecto: 100 puntos × multiplicador; Bien: 60 × multiplicador.
 - Los cristales requieren un Perfecto y añaden 25 puntos.
 - Completar da una estrella; 75 % de precisión da dos y 90 % da tres.
-- El tutorial es una práctica sin daño y puede repetirse desde los ajustes.
+- El tutorial enseña el nuevo aterrizaje sin daño; se repite desde Ajustes.
 
-La esfera salta como respuesta visual. Los aciertos se deciden con el reloj de audio, sin depender de colisiones o de la tasa de fotogramas.
+Cada Perfecto emite brillo y partículas; con efectos reducidos queda un anillo sencillo. Cada fallo emite un breve sonido de daño original, salvo al silenciar. Aparecen mensajes de ánimo al alcanzar hitos de puntuación y frases aleatorias al perder, sin repetir consecutivamente.
+
+Todos los recorridos contienen guiños decorativos originales: anillos dorados, cajas de bonus, bloques de césped y portales. Están fuera de los carriles, no son obstáculos ni coleccionables. No utilizan personajes, logotipos ni audio de otros videojuegos.
 
 ## Repositorio público y publicación
 
@@ -58,7 +74,7 @@ Referencias oficiales: [Vite en GitHub Pages](https://vite.dev/guide/static-depl
 
 ## Instalar y jugar sin conexión
 
-La primera visita requiere internet. Espera a ver **Disponible sin conexión** antes de desconectarte. Se guardan la interfaz, tipografía, motor, iconos y canción completa.
+La primera visita requiere internet. Espera a ver **Disponible sin conexión** antes de desconectarte. Se guardan la interfaz, tipografía, motor, iconos y las cuatro canciones completas. La caché inicial ocupa aproximadamente 5,9 MiB; después no se necesita conexión durante las partidas.
 
 En Android, el botón de instalación abre el aviso cuando el navegador lo permite. En iPhone muestra los pasos de Safari: Compartir → Añadir a pantalla de inicio. La disponibilidad de instalación, vibración y bloqueo de orientación depende del navegador.
 
@@ -80,7 +96,8 @@ Sonido, vibración compatible, efectos reducidos y desfase de −200 a +200 ms. 
 - `src/main.ts`: pantallas, controles y ciclo de vida.
 - `src/storage.ts`: ajustes y récord local con recuperación ante errores de almacenamiento.
 - `src/style.css`: diseño adaptable y accesibilidad de la interfaz.
-- `scripts/generate-assets.mjs`: composición y síntesis originales, además de iconos.
+- `scripts/generate-assets.mjs`: First Light e iconos originales.
+- `scripts/generate-tracks.mjs`: tres composiciones adicionales originales.
 - `tests/`: comprobaciones automáticas de reglas y transporte musical.
 - `qa/`: capturas y reporte de verificación.
 
@@ -92,7 +109,7 @@ npm run build
 npm audit
 ```
 
-La música y los iconos ya están incluidos. Para regenerarlos, instala FFmpeg y ejecuta `npm run assets`. El audio intermedio se escribe en la carpeta de trabajo, no se distribuye con el sitio.
+La música y los iconos ya están incluidos. Para regenerarlos, instala FFmpeg y ejecuta `npm run assets` y `npm run tracks`. El audio intermedio se escribe en la carpeta de trabajo, no se distribuye con el sitio.
 
 Para volver a preparar los dos ZIP de entrega en Windows, ejecuta `npm run build` y después `npm run package`. Los ZIP se escriben junto a la carpeta del proyecto; el paquete de publicación incluye los archivos de `dist` en su raíz, y el de proyecto incluye código, pruebas, documentación y licencias, sin `node_modules`.
 
@@ -102,4 +119,4 @@ Revisar `qa/VERIFICACION.md`. La emulación de tamaños de pantalla no sustituye
 
 ## Recursos
 
-La música First Light y la geometría del juego se crearon para este proyecto. Las dependencias conservan sus licencias originales. Consulta `docs/asset-licenses.md` y `licenses/`.
+Las cuatro canciones, el sonido de daño, los guiños decorativos y la geometría del juego se crearon para este proyecto. Las dependencias conservan sus licencias originales. Consulta `docs/asset-licenses.md` y `licenses/`.

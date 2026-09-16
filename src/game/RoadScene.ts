@@ -11,6 +11,8 @@ export interface RoadView {
   reduced: boolean;
   combo: number;
   active: boolean;
+  travel?: number;
+  easterEggs?: boolean;
 }
 type Spark = {
   x: number;
@@ -31,6 +33,7 @@ export class RoadScene extends Phaser.Scene {
   private impact = -10;
   private laneFlash = [0, 0, 0];
   private badFlash = -10;
+  private perfectFlash = -10;
   getView!: () => RoadView;
   onFrame!: () => void;
 
@@ -79,9 +82,10 @@ export class RoadScene extends Phaser.Scene {
     this.laneFlash = [0, 0, 0];
     this.impact = -10;
     this.badFlash = -10;
+    this.perfectFlash = -10;
   }
   tap(lane: Lane) {
-    // Input owns movement. Scoring may ignore an early tap, but never its feedback.
+    // Immediate steering; the landing clock owns the jump and the score.
     const now = performance.now() / 1000;
     this.lane = lane;
     this.impact = now;
@@ -91,9 +95,10 @@ export class RoadScene extends Phaser.Scene {
     // An expired/wrong note must not steer the ball or trigger a delayed jump.
     const now = performance.now() / 1000;
     if (judgment === "miss") this.badFlash = now;
+    if (judgment === "perfect") this.perfectFlash = now;
     if (!reduced) {
       const p = this.project(lane, 1);
-      for (let i = 0; i < (judgment === "perfect" ? 13 : 6); i++) {
+      for (let i = 0; i < (judgment === "perfect" ? 16 : 6); i++) {
         const angle = i * 2.4;
         this.sparks.push({
           x: p.x,
@@ -101,9 +106,7 @@ export class RoadScene extends Phaser.Scene {
           vx: Math.cos(angle) * (35 + i * 6),
           vy: -35 - Math.abs(Math.sin(angle)) * 100,
           born: now,
-          color: colorNumber(
-            judgment === "miss" ? this.palette.hazard : this.palette.accent,
-          ),
+          color: judgment === "perfect" && i % 3 === 0 ? 0xffffff : colorNumber(judgment === "miss" ? this.palette.hazard : this.palette.accent),
         });
       }
       if (this.sparks.length > 65)
@@ -214,6 +217,40 @@ export class RoadScene extends Phaser.Scene {
       }
     }
   }
+  private drawEasterEgg(time: number, reduced: boolean) {
+    // Original roadside geometry, not collectible hazards or borrowed sprites.
+    const event = Math.floor((time - 6) / 12);
+    const age = time - (6 + event * 12);
+    if (event < 0 || event > 5 || age > 7) return;
+    const g = this.ink, w = this.scale.width, h = this.scale.height;
+    const x = event % 2 ? w - 34 : 34;
+    const y = h * 0.40 + (reduced ? 0 : Math.sin(age * 1.8) * 3);
+    const alpha = reduced ? 0.8 : Math.min(0.85, age * 2, (7 - age) * 2);
+    const kind = event % 4;
+    if (kind === 0) {
+      // A speedy pair of gold rings.
+      g.lineStyle(4, 0xffdc80, alpha);
+      g.strokeEllipse(x - 8, y, 17, 25);
+      g.strokeEllipse(x + 9, y - 9, 17, 25);
+      g.lineStyle(1, 0xfff6d8, alpha);
+      g.lineBetween(x - 13, y - 7, x - 9, y - 10);
+    } else if (kind === 1) {
+      // A bonus box with our four-point pulse emblem.
+      g.fillStyle(0xd99a49, alpha); g.fillRoundedRect(x - 18, y - 17, 36, 34, 4);
+      g.lineStyle(2, 0xffe1a3, alpha); g.strokeRoundedRect(x - 18, y - 17, 36, 34, 4);
+      this.quad([x,y-10,x+4,y-3,x+10,y,x+4,y+3,x,y+10,x-4,y+3,x-10,y,x-4,y-3],0xfff6d8,alpha);
+    } else if (kind === 2) {
+      // A miniature voxel garden.
+      g.fillStyle(0x846148, alpha); g.fillRect(x-18,y-4,36,28);
+      g.fillStyle(0xa4d88b, alpha); g.fillRect(x-18,y-12,36,12);
+      g.fillStyle(0x658f53, alpha); g.fillRect(x-10,y,8,6); g.fillRect(x+7,y,7,9);
+      g.fillStyle(0xb88c61,alpha); g.fillRect(x-13,y+11,6,6); g.fillRect(x+8,y+16,5,5);
+    } else {
+      // Two linked arcade portals, drawn with the game's own visual language.
+      g.lineStyle(3,0x85dfff,alpha); g.strokeEllipse(x-8,y-4,17,38);
+      g.lineStyle(3,0xffc795,alpha); g.strokeEllipse(x+9,y+7,17,38);
+    }
+  }
   update(_time: number, delta: number) {
     if (!this.ink || !this.getView) return;
     this.onFrame?.();
@@ -285,6 +322,7 @@ export class RoadScene extends Phaser.Scene {
         );
       }
     }
+    if (!idle && view.easterEggs) this.drawEasterEgg(view.time, view.reduced);
     if (idle) {
       const demo = [1, 0, 1, 2, 1, 2, 0, 1];
       for (let i = 7; i >= 0; i--) {
@@ -294,8 +332,9 @@ export class RoadScene extends Phaser.Scene {
     } else {
       for (const note of view.notes) {
         const until = note.time - view.time;
-        if (until > 2.1 || until < -0.2 || view.judged?.has(note.id)) continue;
-        const depth = 1 - until / 2;
+        const approach = view.travel ?? 2;
+        if (until > approach + 0.1 || until < -0.25 || view.judged?.has(note.id)) continue;
+        const depth = 1 - until / approach;
         for (const lane of note.obstacles)
           this.tile(lane, depth, true, false, now);
         this.tile(note.lane, depth, false, note.crystal, now);
@@ -317,15 +356,13 @@ export class RoadScene extends Phaser.Scene {
     // settles within 100 ms at 30/60/120 FPS, even across the full track.
     this.ballX += (target.x - this.ballX) * (1 - Math.exp(-delta / 14));
     if (Math.abs(target.x - this.ballX) < 0.5) this.ballX = target.x;
-    const age = now - this.impact;
-    const jump = view.reduced
-      ? 0
-      : age < 0.3
-        ? Math.sin((age / 0.3) * Math.PI) * 24
-        : idle
-          ? Math.sin(now * 2) * 6
-          : 0;
-    const restingY = idle ? Math.min(target.y, h * 0.61) : target.y;
+    const upcoming = view.notes.find(note => note.time >= view.time && !view.judged?.has(note.id));
+    const flight = upcoming ? Math.min(0.26, (upcoming.time - (view.notes[upcoming.id - 1]?.time ?? upcoming.time - 1)) * 0.82) : 0.26;
+    const untilLanding = upcoming ? upcoming.time - view.time : Infinity;
+    // The hop meets the platform at its musical landing, even if steering early.
+    const jump = view.reduced ? 0 : idle ? Math.sin(now * 2) * 6 :
+      untilLanding <= flight ? Math.sin((1 - untilLanding / flight) * Math.PI) * 17 : 0;
+    const restingY = idle ? Math.min(target.y, h - (h <= 720 ? 326 : 365)) : target.y;
     g.fillStyle(0x030d16, 0.5);
     g.fillEllipse(this.ballX, restingY + 2, 48 - jump * 0.4, 10);
     if (!view.reduced && view.combo >= 10) {
@@ -333,6 +370,11 @@ export class RoadScene extends Phaser.Scene {
         g.fillStyle(MINT, 0.12 - i * 0.016);
         g.fillCircle(this.ballX, target.y - 20 - i * 11, 11 - i);
       }
+    }
+    const glowAge = now - this.perfectFlash;
+    if (glowAge < 0.22) {
+      g.lineStyle(2, IVORY, view.reduced ? 0.65 : (1 - glowAge / 0.22) * 0.85);
+      g.strokeCircle(this.ballX, restingY - 24 - jump, view.reduced ? 29 : 27 + glowAge * 46);
     }
     this.ball
       .setPosition(this.ballX, restingY - 24 - jump)
@@ -347,11 +389,12 @@ export class RoadScene extends Phaser.Scene {
           continue;
         }
         g.fillStyle(s.color, 1 - t / 0.6);
-        g.fillCircle(
-          s.x + s.vx * t,
-          s.y + s.vy * t + 120 * t * t,
-          Math.max(1, 3 - t * 3),
-        );
+        const sx = s.x + s.vx * t, sy = s.y + s.vy * t + 120 * t * t;
+        const size = Math.max(1, 4 - t * 5);
+        if (i % 3 === 0) {
+          g.fillRect(sx - size, sy - 0.7, size * 2, 1.4);
+          g.fillRect(sx - 0.7, sy - size, 1.4, size * 2);
+        } else g.fillCircle(sx, sy, size * 0.6);
       }
     if (now - this.badFlash < 0.18 && !view.reduced) {
       g.fillStyle(CORAL, (0.18 - (now - this.badFlash)) * 0.18);

@@ -3,13 +3,15 @@ import "@fontsource-variable/outfit";
 import "./style.css";
 import { registerSW } from "virtual:pwa-register";
 import {
-  chart,
+  createChart,
   DURATION,
   phases,
   TRACK_NAME,
   type Lane,
   type Note,
 } from "./core/chart";
+import { getLevel, levels } from "./core/levels";
+import { encouragements, lossMessages, nextMessage } from "./core/messages";
 import { Run, type Hit } from "./core/rules";
 import { Conductor } from "./audio/conductor";
 import { RoadScene } from "./game/RoadScene";
@@ -20,6 +22,8 @@ import {
   saveSettings,
   getRecord,
   saveRecord,
+  getAttempts,
+  startAttempt,
   storageAvailable,
 } from "./storage";
 
@@ -59,12 +63,13 @@ app.innerHTML = `
     <header class="topbar"><a class="wordmark" href="#" aria-label="Pulse Road, inicio">${icon("bolt")}<span>pulse<span class="wordmark-light">road</span></span></a><div class="utilities"><button class="icon-button" id="sound-button" aria-label="Silenciar sonido">${icon("sound")}</button><button class="icon-button" id="settings-button" aria-label="Ajustes">${icon("settings")}</button></div></header>
     <section id="hud" class="hud" hidden><div class="hud-score"><small>PUNTOS</small><strong id="score">0</strong></div><div class="hud-combo"><strong id="combo">×1</strong><small id="combo-label">MULTIPLICADOR</small></div><button class="icon-button" id="pause-button" aria-label="Pausar partida">${icon("pause")}</button><div class="energy"><span id="energy-fill"></span></div><div class="song-progress"><span id="progress-fill"></span></div></section>
     <div id="phase" class="phase" hidden></div>
+    <div id="motivation" class="motivation" role="status"></div>
     <div id="feedback" class="feedback" aria-live="off"></div>
     <section id="screen" class="screen"></section>
     <section id="tutorial-guide" class="tutorial-guide" hidden></section>
     <div id="countdown" class="countdown" hidden></div>
     <div id="lane-controls" class="lane-controls" hidden aria-label="Carriles"><button data-lane="0" aria-label="Carril izquierdo">${icon("left")}<span>IZQUIERDA</span></button><button data-lane="1" aria-label="Carril central">${icon("center")}<span>CENTRO</span></button><button data-lane="2" aria-label="Carril derecho">${icon("right")}<span>DERECHA</span></button></div>
-    <div id="song-label" class="song-label" hidden>${icon("headphones")}<span>${TRACK_NAME}</span><span id="song-time">0:00 / 1:20</span></div>
+    <div id="song-label" class="song-label" hidden>${icon("headphones")}<span id="track-name">${TRACK_NAME}</span><span id="song-time">0:00 / 1:20</span></div>
     <div id="orientation" class="orientation" hidden><div>${icon("replay")}<h2>Volvamos a vertical</h2><p>Tu partida está en pausa.<br/>Gira el teléfono para seguir.</p></div></div>
   </main>
   <aside class="desktop-record"><span class="vertical-title">FOLLOW THE PULSE</span><div>${icon("diamond")}<p>80 segundos.<br/>Tu próximo récord.</p><small>Hecho para jugar con un dedo.</small></div></aside>
@@ -88,7 +93,13 @@ type Mode =
   | "paused"
   | "results";
 let mode: Mode = "home";
-let run = new Run(chart);
+let level = getLevel(settings.difficulty);
+let chart = createChart(level);
+let run = new Run(chart, level);
+let nextMilestone = 1000;
+let motivationUntil = 0;
+let lastEncouragement = "";
+let lastLoss = "";
 let silentMode = false;
 let loadingGeneration = 0;
 let pauseMode: "playing" | "tutorial" = "playing";
@@ -116,6 +127,7 @@ let tutorialNote: Note = {
   crystal: false,
   obstacles: [],
 };
+let tutorialRun = new Run([tutorialNote], getLevel("titi"));
 const tutorialLanes: Lane[] = [0, 2, 1, 0, 1, 2];
 const tutorialTitles = [
   "Toca a la izquierda",
@@ -126,9 +138,9 @@ const tutorialTitles = [
   "Un acierto más",
 ];
 const tutorialCopy = [
-  "Cuando la plataforma llegue a la línea.",
-  "Un toque por plataforma.",
-  "Toca la zona de abajo, bajo el carril.",
+  "Adelántate: colócate antes de que llegue.",
+  "La pelota aterriza sola. Quédate en el carril.",
+  "Puedes ir al centro con el botón de abajo.",
   "Los pinchos no son tu camino.",
   "Los aciertos seguidos forman tu combo.",
   "Ya casi estás listo para la canción.",
@@ -155,6 +167,7 @@ function setMode(value: Mode) {
   $("#tutorial-guide").hidden = value !== "tutorial";
   $("#countdown").hidden = value !== "countdown";
   screen.hidden = ["playing", "tutorial", "countdown"].includes(value);
+  $("#motivation").hidden = value !== "playing";
 }
 function syncSound() {
   audio.mute(!settings.sound);
@@ -169,6 +182,9 @@ function cacheLabel() {
     ? `${icon("check")} Disponible sin conexión`
     : `${icon("headphones")} Mejor con sonido · También puedes jugar en silencio`;
 }
+function levelPicker() {
+  return `<div class="level-picker"><label for="difficulty">Elige tu dificultad</label><select id="difficulty" aria-label="Elige tu dificultad" aria-describedby="level-info">${levels.map(item => `<option value="${item.id}" ${item.id === level.id ? "selected" : ""}>${item.name} · ${item.subtitle}</option>`).join("")}</select><p id="level-info">${level.track} · ${level.bpm} BPM${level.id === "servellon" ? " · 6 saltos/s" : ""}</p></div>`;
+}
 function home() {
   loadingGeneration++;
   audio.reset();
@@ -177,12 +193,20 @@ function home() {
   feedback.textContent = "";
   feedback.className = "feedback";
   screen.innerHTML = `<div class="home-heading"><h1>PULSE<br/><span>ROAD</span></h1><p>Encuentra tu ritmo.</p></div>
-    <div class="home-bottom"><div class="record-line">${icon("trophy")}<span>TU RÉCORD</span><strong>${fmt(getRecord())}</strong></div>
+    <div class="home-bottom">${levelPicker()}<div class="record-line">${icon("trophy")}<span>RÉCORD · ${level.name.toLocaleUpperCase("es")}</span><strong>${fmt(getRecord())}</strong></div>
     <button class="primary play-button" id="play-button">${icon("play")}<span>Jugar</span><span class="button-detail">80 s</span></button>
     <button class="text-button" id="tutorial-button">Primera vez aquí${icon("arrow")}</button>
     <div class="offline-label" id="offline-label">${cacheLabel()}</div>
     <div class="home-links"><button class="text-button" id="install-button">${icon("install")} Instalar juego</button><button class="text-button" id="credits-button">Créditos</button></div>
     ${updateAvailable ? '<button class="update-button" id="update-button">Hay una nueva versión. Actualizar</button>' : ""}</div>`;
+  $<HTMLSelectElement>("#difficulty").onchange = (event) => {
+    level = getLevel((event.target as HTMLSelectElement).value);
+    chart = createChart(level);
+    settings.difficulty = level.id;
+    saveSettings();
+    home();
+    $("#difficulty").focus({ preventScroll: true });
+  };
   $("#play-button").onclick = () => void prepare(!settings.tutorial);
   $("#tutorial-button").onclick = () => void prepare(true);
   $("#install-button").onclick = () => void install();
@@ -204,7 +228,7 @@ async function prepare(withTutorial: boolean) {
         progress < 0.9
           ? `Descargando canción · ${Math.round(progress * 100)} %`
           : "Preparando el sonido…";
-    });
+    }, level.audio);
     if (generation !== loadingGeneration) return;
     silentMode = false;
     if (document.hidden || isLandscape()) {
@@ -228,7 +252,12 @@ async function prepare(withTutorial: boolean) {
 }
 function beginRun() {
   audio.reset();
-  run = new Run(chart);
+  run = new Run(chart, level);
+  startAttempt(level.id);
+  nextMilestone = 1000;
+  motivationUntil = 0;
+  $("#motivation").textContent = "";
+  $("#track-name").textContent = `${level.name} · ${level.track}`;
   scene.reset();
   feedback.textContent = "";
   pauseMode = "playing";
@@ -252,11 +281,13 @@ function countdown(action: () => void) {
 function beginTutorial() {
   audio.reset();
   scene.reset();
-  run = new Run(chart);
+  run = new Run(chart, level);
+  $("#track-name").textContent = "Tutorial · aterriza con anticipación";
   tutorialStep = 0;
   tutorialTime = 0;
   pauseMode = "tutorial";
   tutorialStarted = performance.now() / 1000;
+  tutorialRun = new Run([], getLevel("titi"));
   makeTutorialNote(2);
   setMode("tutorial");
   renderTutorial();
@@ -264,6 +295,7 @@ function beginTutorial() {
 }
 function makeTutorialNote(at: number) {
   const lane = tutorialLanes[tutorialStep];
+  const previousLane = tutorialRun.lane;
   tutorialNote = {
     id: tutorialStep,
     lane,
@@ -272,6 +304,8 @@ function makeTutorialNote(at: number) {
     obstacles:
       tutorialStep === 3 ? ([0, 1, 2] as Lane[]).filter((x) => x !== lane) : [],
   };
+  tutorialRun = new Run([tutorialNote], getLevel("titi"));
+  tutorialRun.tap(previousLane, at - 1.5);
 }
 function renderTutorial() {
   $("#tutorial-guide").innerHTML =
@@ -303,6 +337,13 @@ function hitFeedback(hit: Hit) {
   feedbackUntil = performance.now() + 520;
   scene.hit(hit.note.lane, hit.judgment, settings.reduced);
   audio.tick(hit.judgment);
+  if (hit.judgment !== "miss" && run.score >= nextMilestone && performance.now() > motivationUntil + 4500) {
+    lastEncouragement = nextMessage(encouragements, lastEncouragement);
+    $("#motivation").textContent = lastEncouragement;
+    $("#motivation").classList.add("visible");
+    motivationUntil = performance.now() + 2300;
+    nextMilestone = run.score + 2500;
+  }
   if (settings.vibration && typeof navigator.vibrate === "function")
     navigator.vibrate(hit.judgment === "miss" ? 35 : 10);
 }
@@ -319,28 +360,25 @@ function tap(lane: Lane) {
   window.setTimeout(() => button.classList.remove("pressed"), 100);
   if (mode === "tutorial") {
     const t = performance.now() / 1000 - tutorialStarted;
-    if (lane !== tutorialNote.lane || Math.abs(t - tutorialNote.time) > 0.24)
-      return;
-    audio.tick("perfect");
-    scene.hit(lane, "perfect", settings.reduced);
-    feedback.innerHTML = `<strong>¡Eso es!</strong><span>${tutorialStep >= 4 ? "VAS EN RACHA" : "AL RITMO"}</span>`;
-    feedback.className = "feedback show perfect";
-    feedbackUntil = performance.now() + 450;
-    tutorialStep++;
-    if (tutorialStep >= tutorialLanes.length) {
-      finishTutorial();
-      return;
-    }
-    makeTutorialNote(t + 1.6);
-    renderTutorial();
+    tutorialRun.tap(lane, t).forEach(tutorialFeedback);
     return;
   }
   const t = Math.max(0, audio.time - settings.offset / 1000);
-  for (const missed of run.advance(t)) hitFeedback(missed);
-  const hit = run.tap(lane, t);
-  if (hit) hitFeedback(hit);
+  run.tap(lane, t).forEach(hitFeedback);
   updateHUD();
   if (run.dead) finishRun(false);
+}
+function tutorialFeedback(hit: Hit) {
+  if (hit.judgment === "miss") { makeTutorialNote(tutorialTime + 1.5); return; }
+  audio.tick("perfect");
+  scene.hit(hit.note.lane, "perfect", settings.reduced);
+  feedback.innerHTML = `<strong>¡Eso es!</strong><span>${tutorialStep >= 4 ? "VAS EN RACHA" : "BUEN ATERRIZAJE"}</span>`;
+  feedback.className = "feedback show perfect";
+  feedbackUntil = performance.now() + 450;
+  tutorialStep++;
+  if (tutorialStep >= tutorialLanes.length) { finishTutorial(); return; }
+  makeTutorialNote(tutorialTime + 1.6);
+  renderTutorial();
 }
 function updateHUD() {
   $("#score").textContent = fmt(run.score);
@@ -350,7 +388,7 @@ function updateHUD() {
     : "MULTIPLICADOR";
   $("#energy-fill").style.transform = `scaleX(${run.energy / 100})`;
   $("#energy-fill").classList.toggle("low", run.energy <= 40);
-  $(".energy").setAttribute("aria-label", `Energía: ${run.energy} de 100`);
+  $(".energy").setAttribute("aria-label", `Energía: ${Math.round(run.energy)} de 100`);
   $(".energy").setAttribute("role", "progressbar");
   $(".energy").setAttribute("aria-valuemin", "0");
   $(".energy").setAttribute("aria-valuemax", "100");
@@ -360,11 +398,12 @@ function finishRun(completed: boolean) {
   if (mode === "results") return;
   audio.pause();
   run.finished = completed;
-  const record = saveRecord(run.score);
+  const record = saveRecord(run.score, level.id);
+  if (!completed) lastLoss = nextMessage(lossMessages, lastLoss);
   setMode("results");
   feedback.textContent = "";
   const stars = run.stars;
-  screen.innerHTML = `<div class="results-panel"><div class="result-symbol">${icon(completed ? "trophy" : "replay")}</div><h2>${completed ? "¡Camino completo!" : "Una más y lo logras"}</h2><p>${completed ? "Ese ritmo ya es tuyo." : "Cada intento te lleva más lejos."}</p><div class="result-stars" aria-label="${stars} de 3 estrellas">${[1, 2, 3].map((x) => `<span class="${x <= stars ? "earned" : ""}">${icon("star")}</span>`).join("")}</div><div class="final-score">${fmt(run.score)}</div><div class="record-status">${record ? `${icon("trophy")} NUEVO RÉCORD` : `RÉCORD PERSONAL · ${fmt(getRecord())}`}</div><div class="result-stats"><div><strong>${run.accuracy}%</strong><span>Precisión</span></div><div><strong>${run.maxCombo}</strong><span>Combo máx.</span></div><div><strong>${run.crystals}</strong><span>Cristales</span></div></div><div class="judgment-summary"><span><i class="perfect-dot"></i>${run.perfect} perfectos</span><span>${run.good} buenos</span><span>${run.misses} fallos</span></div><button class="primary" id="replay-button">${icon("replay")}Volver a jugar</button><button class="text-button" id="back-home">Volver al inicio</button>${!storageAvailable ? '<p class="storage-note">El navegador no permite guardar tu récord.</p>' : ""}</div>`;
+  screen.innerHTML = `<div class="results-panel"><div class="result-symbol">${icon(completed ? "trophy" : "replay")}</div><h2>${completed ? "¡Camino completo!" : lastLoss}</h2><p>${level.name} · Intento ${getAttempts(level.id)}<br/>${completed ? "Ese ritmo ya es tuyo." : "Adelántate al siguiente aterrizaje."}</p><div class="result-stars" aria-label="${stars} de 3 estrellas">${[1, 2, 3].map((x) => `<span class="${x <= stars ? "earned" : ""}">${icon("star")}</span>`).join("")}</div><div class="final-score">${fmt(run.score)}</div><div class="record-status">${record ? `${icon("trophy")} NUEVO RÉCORD` : `RÉCORD PERSONAL · ${fmt(getRecord())}`}</div><div class="result-stats"><div><strong>${run.accuracy}%</strong><span>Precisión</span></div><div><strong>${run.maxCombo}</strong><span>Combo máx.</span></div><div><strong>${run.crystals}</strong><span>Cristales</span></div></div><div class="judgment-summary"><span><i class="perfect-dot"></i>${run.perfect} perfectos</span><span>${run.good} buenos</span><span>${run.misses} fallos</span></div><button class="primary" id="replay-button">${icon("replay")}Volver a jugar</button><button class="text-button" id="back-home">Volver al inicio</button>${!storageAvailable ? '<p class="storage-note">El navegador no permite guardar tu récord.</p>' : ""}</div>`;
   $("#replay-button").onclick = () => void resumeAudioAnd(beginRun);
   $("#back-home").onclick = home;
 }
@@ -420,7 +459,7 @@ function frame() {
     );
     $("#song-time").textContent =
       `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")} / 1:20`;
-    $("#phase").textContent = phases[Math.min(4, Math.floor(t / 16))];
+    $("#phase").textContent = `${level.name.toLocaleUpperCase("es")} · ${phases[Math.min(4, Math.floor(t / 16))]}`;
     if (run.dead) finishRun(false);
     else if (t >= DURATION) finishRun(true);
   } else if (mode === "countdown") {
@@ -433,9 +472,9 @@ function frame() {
     }
   } else if (mode === "tutorial") {
     tutorialTime = performance.now() / 1000 - tutorialStarted;
-    if (tutorialTime > tutorialNote.time + 0.24)
-      makeTutorialNote(tutorialTime + 1.5);
+    tutorialRun.advance(tutorialTime).forEach(tutorialFeedback);
   }
+  if (performance.now() > motivationUntil) $("#motivation").classList.remove("visible");
   if (performance.now() > feedbackUntil) feedback.classList.remove("show");
 }
 scene.onFrame = frame;
@@ -453,6 +492,8 @@ scene.getView = () => ({
   reduced: settings.reduced,
   combo: run.combo,
   active: mode === "playing",
+  travel: mode === "tutorial" || pauseMode === "tutorial" && mode === "paused" ? 2.4 : level.travel,
+  easterEggs: mode !== "tutorial" && !(mode === "paused" && pauseMode === "tutorial"),
 });
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -559,7 +600,7 @@ async function install() {
 function credits() {
   showDialog(
     "Detrás del pulso",
-    `<p><strong>Pulse Road</strong><br/>Un juego original para este proyecto.</p><p><strong>First Light</strong><br/>Composición electrónica original de 80 segundos, sintetizada para el juego sin muestras de terceros.</p><p><strong>Diseño y desarrollo</strong><br/>Proyecto creado con asistencia de Codex. Motor Phaser, tipografía Outfit y recursos gráficos originales.</p><p class="dialog-note">Inspirado en los juegos de ritmo. Sin recursos de Tiles Hop, Magic Tiles o Dancing Road. Licencias completas incluidas en el proyecto.</p>`,
+    `<p><strong>Pulse Road</strong><br/>Un juego original para este proyecto.</p><p><strong>Cuatro pistas originales</strong><br/>Pequeña Órbita, First Light, Neon Sprint y Umbral Cero. Música y efecto de daño sintetizados para el juego, sin muestras de terceros.</p><p><strong>Guiños de la pista</strong><br/>Anillos veloces, cajas de bonus, bloques de césped y portales: pequeños homenajes decorativos a los clásicos. No son obstáculos ni recursos oficiales de otros juegos.</p><p><strong>Diseño y desarrollo</strong><br/>Proyecto creado con asistencia de Codex. Motor Phaser, tipografía Outfit y recursos gráficos originales.</p><p class="dialog-note">Inspirado en los juegos de ritmo. Sin recursos de Tiles Hop, Magic Tiles o Dancing Road. Licencias completas incluidas en el proyecto.</p>`,
   );
 }
 $("#settings-button").onclick = openSettings;
@@ -584,7 +625,7 @@ laneControls.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
   });
 });
 document.addEventListener("keydown", (e) => {
-  if (dialog.open || e.repeat || e.target instanceof HTMLInputElement) return;
+  if (dialog.open || e.repeat || (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement)) return;
   const keys: Record<string, Lane> = {
     ArrowLeft: 0,
     ArrowDown: 1,
@@ -654,18 +695,13 @@ $(".song-progress").setAttribute("aria-valuenow", "0");
 if ("serviceWorker" in navigator && "caches" in window) {
   void navigator.serviceWorker.ready
     .then(async () => {
-      const [shell, song] = await Promise.all([
+      const cached = await Promise.all([
         caches.match(new URL(assetUrl("index.html"), location.origin).href, {
           ignoreSearch: true,
         }),
-        caches.match(
-          new URL(assetUrl("audio/first-light.mp3"), location.origin).href,
-          {
-            ignoreSearch: true,
-          },
-        ),
+        ...levels.map(item => caches.match(new URL(assetUrl(`audio/${item.audio}`), location.origin).href, { ignoreSearch: true })),
       ]);
-      if (shell && song) {
+      if (cached.every(Boolean)) {
         offlineReady = true;
         if (mode === "home") $("#offline-label").innerHTML = cacheLabel();
       }
