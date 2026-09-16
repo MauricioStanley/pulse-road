@@ -15,7 +15,8 @@ Esta sección sustituye las reglas y cifras de las versiones históricas que sig
 - Se inspeccionaron portada y controles a 390×844, 320×568 y 1280×900. Selector accesible también cuando su etiqueta visual se oculta; sin scroll horizontal en 320px. Resultados de derrota con título largo siguen dentro de la pantalla pequeña.
 - **Offline verificado de nuevo**: se apagó el proceso del servidor local; una solicitud HTTP confirmó que no respondía. Se recargó desde el service worker y se iniciaron las cuatro dificultades con sus respectivas canciones desde caché. Se verificó pausa y derrota con el servidor todavía apagado. No se afirma una segunda partida completa offline por cada canción.
 - Capturas: `titi-results.png`, `servellon-results.png`, `levels-gameplay.png`, `levels-small.png`. La captura de portada grande inicial `levels-home.png` precede al pequeño ajuste de posición de la esfera.
-- Precaché: aproximadamente **5,9 MiB** para juego y cuatro canciones. La primera visita requiere internet. Sin muestras de otros juegos ni nuevos servicios externos.
+- Precaché: aproximadamente **5,7 MiB (unos 6 MB)** para juego y cuatro canciones. La primera visita requiere internet. Sin muestras de otros juegos ni nuevos servicios externos.
+- Publicación confirmada: commit `5a12614`, GitHub Actions `35133711295` completado correctamente en 32 s, incluida instalación limpia, pruebas y compilación. Se actualizó la PWA en https://mauriciostanley.github.io/pulse-road/ y se comprobaron selector, carga de Pequeña Órbita, seis aterrizajes anticipados consecutivos, cristal y pausa sin errores de consola. Las cuatro URL de audio responden HTTP 200. El QR mantiene la misma URL.
 
 Continúan pendientes las pruebas en Android/iPhone físicos, instalación real, vibración y rendimiento de teléfonos de gama baja. Las resoluciones emuladas y los relojes controlados no reemplazan esas pruebas.
 

@@ -74,7 +74,7 @@ Referencias oficiales: [Vite en GitHub Pages](https://vite.dev/guide/static-depl
 
 ## Instalar y jugar sin conexión
 
-La primera visita requiere internet. Espera a ver **Disponible sin conexión** antes de desconectarte. Se guardan la interfaz, tipografía, motor, iconos y las cuatro canciones completas. La caché inicial ocupa aproximadamente 5,9 MiB; después no se necesita conexión durante las partidas.
+La primera visita requiere internet. Espera a ver **Disponible sin conexión** antes de desconectarte. Se guardan la interfaz, tipografía, motor, iconos y las cuatro canciones completas. La caché inicial ocupa aproximadamente 5,7 MiB (unos 6 MB); después no se necesita conexión durante las partidas.
 
 En Android, el botón de instalación abre el aviso cuando el navegador lo permite. En iPhone muestra los pasos de Safari: Compartir → Añadir a pantalla de inicio. La disponibilidad de instalación, vibración y bloqueo de orientación depende del navegador.
 
