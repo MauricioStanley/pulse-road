@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.impeccable/review/
+*.log
+.env*
+dist-pages/
+*.zip
+work/

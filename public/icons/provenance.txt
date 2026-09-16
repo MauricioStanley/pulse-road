@@ -1,0 +1,2 @@
+Origin: Original Pulse Road SVG artwork in scripts/generate-assets.mjs, rendered to PNG with sharp. Created for this project; no external raster image source.
+Files: icon.svg, icon-192.png, icon-512.png, apple-touch-icon.png, maskable-512.png.

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-16T09:33:40.414Z",
+  "title": "Design System: Pulse Road",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "cabinet",
+        "value": "0 24px 80px #0008",
+        "purpose": "Gabinete de escritorio."
+      },
+      {
+        "name": "dialog",
+        "value": "0 22px 80px #0009",
+        "purpose": "Diálogo modal."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button",
+        "value": "transform .15s, background .15s",
+        "purpose": "Respuesta de acciones; desactivada con efectos reducidos."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "740px"
+      },
+      {
+        "name": "narrow",
+        "value": "360px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Acción principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción dominante.",
+      "html": "<button class=\"ds-primary\">Jugar</button>",
+      "css": ".ds-primary{font-family:\"Outfit Variable\",sans-serif;width:100%;min-height:56px;border-radius:16px;padding:14px 20px;cursor:pointer;font-size:18px;font-weight:650;border:0;background:var(--mint,#70f4cb);color:#082920;transition:transform .15s,background .15s}.ds-primary:hover{background:#9bffdf;transform:translateY(-2px)}.ds-primary:active{transform:translateY(1px)}.ds-primary:focus-visible{outline:2px solid var(--mint,#70f4cb);outline-offset:5px}"
+    },
+    {
+      "name": "Acción secundaria",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción subordinada.",
+      "html": "<button class=\"ds-secondary\">Empezar de nuevo</button>",
+      "css": ".ds-secondary{font-family:\"Outfit Variable\",sans-serif;width:100%;min-height:56px;border-radius:16px;padding:14px 20px;cursor:pointer;font-size:16px;font-weight:650;border:1px solid #35545a;background:#193239;color:var(--text,#eaf6ef);transition:background .15s}.ds-secondary:hover{background:#25464b}.ds-secondary:focus-visible{outline:2px solid var(--mint,#70f4cb);outline-offset:5px}"
+    },
+    {
+      "name": "Récord",
+      "kind": "chip",
+      "description": "Lectura sobre la pista.",
+      "html": "<div class=\"ds-record\">TU RÉCORD <strong>38,650</strong></div>",
+      "css": ".ds-record{display:inline-flex;gap:9px;align-items:center;font-family:\"Outfit Variable\",sans-serif;padding:5px 12px;border-radius:999px;background:#07151eef;color:var(--muted,#a4bebf);font-size:12px;letter-spacing:1.4px}.ds-record strong{font-size:18px;font-weight:600;letter-spacing:0;font-variant-numeric:tabular-nums;color:var(--text,#eaf6ef)}"
+    },
+    {
+      "name": "Diálogo",
+      "kind": "card",
+      "description": "Superficie de ajustes.",
+      "html": "<section class=\"ds-dialog\"><h2>A tu ritmo</h2><p>Los ajustes se guardan en este dispositivo.</p></section>",
+      "css": ".ds-dialog{font-family:\"Outfit Variable\",sans-serif;background:#0c222b;color:var(--text,#eaf6ef);border:1px solid #335159;border-radius:25px;padding:26px;box-shadow:0 22px 80px #0009}.ds-dialog h2{font-size:27px;font-weight:700;letter-spacing:-.7px;margin:0}.ds-dialog p{font-size:15px;line-height:1.5;color:#b9d0ce;margin:13px 0}"
+    },
+    {
+      "name": "Interruptor",
+      "kind": "input",
+      "description": "Checkbox etiquetado.",
+      "html": "<label class=\"ds-setting\">Sonido <input type=\"checkbox\" checked></label>",
+      "css": ".ds-setting{display:flex;justify-content:space-between;align-items:center;gap:15px;font-family:\"Outfit Variable\",sans-serif;color:var(--text,#eaf6ef)}.ds-setting input{appearance:none;width:43px;min-width:43px;height:25px;border-radius:20px;background:#42606a;position:relative;cursor:pointer}.ds-setting input:before{content:\"\";position:absolute;width:19px;height:19px;top:3px;left:3px;border-radius:50%;background:#d8e7e5;transition:transform .15s}.ds-setting input:checked{background:var(--mint,#70f4cb)}.ds-setting input:checked:before{transform:translateX(18px);background:#082920}.ds-setting input:focus-visible{outline:2px solid var(--mint,#70f4cb);outline-offset:5px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Un circuito que se toca",
+    "overview": "Se conserva la dirección acordada: juguete electrónico luminoso, pista azul noche, plataformas marfil y luz menta. La experiencia es el juego, no una página promocional. La escena persiste detrás del inicio, pausa y resultados.",
+    "keyCharacteristics": [
+      "Geometría en perspectiva generada por Phaser.",
+      "Esfera luminosa, plataformas, obstáculos y cristales con siluetas distintas.",
+      "Jerarquía clara entre acción principal, partida y utilidades.",
+      "Respuesta inmediata al toque y movimiento decorativo reducible."
+    ],
+    "rules": [
+      {
+        "name": "The Shape and Color Rule",
+        "body": "Las señales jugables combinan forma, posición y color: plataforma plana, obstáculo marcado y cristal romboidal.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do conservar una acción principal clara en cada pantalla.",
+      "Do mantener las señales temporales visibles con sonido apagado.",
+      "Do conservar posiciones de control entre estados.",
+      "Do limitar partículas y ofrecer efectos reducidos."
+    ],
+    "donts": [
+      "Don't depender solamente del color.",
+      "Don't añadir recursos remotos necesarios durante la partida.",
+      "Don't presentar capturas móviles como pruebas en teléfonos físicos.",
+      "Don't afirmar que el modo reducido elimina todo movimiento."
+    ]
+  }
+}
