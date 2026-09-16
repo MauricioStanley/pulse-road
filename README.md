@@ -1,5 +1,7 @@
 # Pulse Road
 
+[Jugar ahora](https://mauriciostanley.github.io/pulse-road/) · [QR para compartir](qr/pulse-road.png)
+
 Juego de ritmo móvil de 80 segundos. Escanea una URL publicada, toca uno de tres carriles y supera tu récord. No utiliza cuentas, anuncios ni servicios de pago durante la partida.
 
 ## Iniciar en la computadora
@@ -38,7 +40,7 @@ La esfera salta como respuesta visual. Los aciertos se deciden con el reloj de a
 
 Código: https://github.com/MauricioStanley/pulse-road
 
-El despliegue se configura en GitHub Pages mediante `.github/workflows/deploy.yml`. Cada actualización de `main` ejecuta las pruebas, compila y publica solo si todo termina correctamente. La dirección de destino es https://mauriciostanley.github.io/pulse-road/; comprueba que la ejecución de GitHub Actions haya finalizado antes de compartir una nueva versión.
+El juego está publicado en https://mauriciostanley.github.io/pulse-road/. El despliegue se configura en GitHub Pages mediante `.github/workflows/deploy.yml`. Las actualizaciones de `main` ejecutan las pruebas, compilan y publican solo si todo termina correctamente, salvo commits documentales marcados para omitir CI. Comprueba que la ejecución de GitHub Actions haya finalizado antes de compartir una nueva versión del juego.
 
 GitHub Pages publica bajo `/pulse-road/`. El workflow define `BASE_PATH=/pulse-road/` y el código adapta los recursos, el manifiesto y el service worker a esa ruta. En desarrollo local el prefijo sigue siendo `/`.
 

@@ -8,6 +8,10 @@ Hay cuatro paletas seleccionables: Menta, Morado, Rojo y Verde. Once pruebas nue
 
 En navegador se seleccionaron Morado, Rojo y Verde; se verificó la esfera y el circuito y se confirmó que Verde seguía seleccionado al recargar. Los tamaños móviles son emulados. El repositorio público se configura con un workflow que prueba, compila y despliega en GitHub Pages. Las fases siguientes son el historial de verificación previo a esta actualización; los pendientes de Cloudflare corresponden a aquella primera entrega, ahora sustituida por GitHub Pages.
 
+Publicación confirmada: https://mauriciostanley.github.io/pulse-road/ y repositorio público https://github.com/MauricioStanley/pulse-road. GitHub Actions completó instalación limpia, 35 pruebas, compilación y despliegue. La página y el MP3 responden HTTP 200 y HTTPS está activado.
+
+Prueba real en esa URL: se cargó el tutorial, se omitió para probar la canción completa y se completaron los 80 segundos con pausas/reanudaciones, 110 Perfectos, cero fallos, 14 cristales, tres estrellas y 38.650 puntos. No hubo errores en la consola. Al recargar se conservaron el tema Morado, el récord y la indicación «Disponible sin conexión». Captura: `public-results.png`. El QR se generó para esa URL; todavía no se ha ensayado impreso con teléfonos físicos.
+
 ## Fase 1 — Controles y ritmo
 
 APROBADA en el entorno disponible. Tutorial completado mediante los seis pasos y botones reales. Teclado izquierda/abajo/derecha comprobado durante una partida de 80 segundos. Ventanas ±80/±160 ms y sus bordes comprobados automáticamente.
