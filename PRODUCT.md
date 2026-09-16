@@ -7,6 +7,8 @@ web
 ## Stack
 User approved TypeScript, Phaser 3, Vite, HTML/CSS menus, PWA, static deployment on GitHub Pages. No React or backend.
 
+Optional ultralight player at `lite.html`: native Canvas 2D, ES5 classic script, system font, 240px maximum internal canvas width, 30 FPS drawing target and immediate input rendering. No Phaser/WebGL, particles, decorative jumps or vibration. Shares rules, charts, settings, records and attempts with the full game. Streams only the selected MP3 using HTML audio. Direct entry does not install the full PWA cache; existing full-PWA caches can serve it offline. Built for low-resource devices, with no claim of verified S3 Mini hardware performance or guaranteed legacy HTTPS compatibility.
+
 ## Users
 Visitors at a student project event, playing immediately on their own mobile phones through a QR.
 

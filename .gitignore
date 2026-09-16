@@ -4,5 +4,6 @@ dist/
 *.log
 .env*
 dist-pages/
+public/lite.js
 *.zip
 work/

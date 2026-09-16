@@ -10,4 +10,7 @@ export const levels: readonly Level[] = [
   { id: "dificil", name: "Difícil", subtitle: "Sin frenos", track: "Neon Sprint", audio: "neon-sprint.mp3", bpm: 150, duration: 80, travel: 1.65, lateWindow: 0.10, damage: 28, recovery: 1, description: "Saltos rápidos y ráfagas. Mira una plataforma por delante." },
   { id: "servellon", name: "Servellon", subtitle: "Pesadilla", track: "Umbral Cero", audio: "zero-threshold.mp3", bpm: 180, duration: 80, travel: 1.25, lateWindow: 0.065, damage: 40, recovery: 0.5, description: "Hasta 6 plataformas por segundo. Patrones fijos para aprender intento a intento." },
 ];
-export const getLevel = (id: unknown): Level => levels.find(level => level.id === id) ?? levels[0];
+export function getLevel(id: unknown): Level {
+  for (const level of levels) if (level.id === id) return level;
+  return levels[0];
+}

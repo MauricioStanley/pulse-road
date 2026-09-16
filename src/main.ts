@@ -54,7 +54,8 @@ const paths: Record<string, string> = {
 };
 const icon = (name: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.play}</svg>`;
-const fmt = (n: number) => new Intl.NumberFormat("es-SV").format(n);
+const numberFormat = new Intl.NumberFormat("es-SV");
+const fmt = (n: number) => numberFormat.format(n);
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
   <aside class="desktop-note"><img src="${assetUrl("icons/icon.svg")}" width="44" height="44" alt=""/><span>Pulse Road</span><p>Un toque.<br/>Todo el ritmo.</p><div class="keyboard-guide"><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><small>También puedes usar el teclado.</small></div></aside>
@@ -197,7 +198,7 @@ function home() {
     <button class="primary play-button" id="play-button">${icon("play")}<span>Jugar</span><span class="button-detail">80 s</span></button>
     <button class="text-button" id="tutorial-button">Primera vez aquí${icon("arrow")}</button>
     <div class="offline-label" id="offline-label">${cacheLabel()}</div>
-    <div class="home-links"><button class="text-button" id="install-button">${icon("install")} Instalar juego</button><button class="text-button" id="credits-button">Créditos</button></div>
+    <div class="home-links"><button class="text-button" id="install-button">${icon("install")} Instalar juego</button><a class="text-button" href="${assetUrl("lite.html")}">Ultraligero</a><button class="text-button" id="credits-button">Créditos</button></div>
     ${updateAvailable ? '<button class="update-button" id="update-button">Hay una nueva versión. Actualizar</button>' : ""}</div>`;
   $<HTMLSelectElement>("#difficulty").onchange = (event) => {
     level = getLevel((event.target as HTMLSelectElement).value);
@@ -251,6 +252,8 @@ async function prepare(withTutorial: boolean) {
   }
 }
 function beginRun() {
+  lastSongSecond = -1;
+  lastPhase = -1;
   audio.reset();
   run = new Run(chart, level);
   startAttempt(level.id);
@@ -444,6 +447,8 @@ function pause(reason = "Tu ritmo puede esperar") {
   $("#pause-settings").onclick = openSettings;
   $("#pause-home").onclick = home;
 }
+let lastSongSecond = -1;
+let lastPhase = -1;
 function frame() {
   if (mode === "playing") {
     const t = audio.time;
@@ -457,9 +462,15 @@ function frame() {
       "aria-valuenow",
       Math.min(DURATION, t).toFixed(3),
     );
-    $("#song-time").textContent =
-      `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")} / 1:20`;
-    $("#phase").textContent = `${level.name.toLocaleUpperCase("es")} · ${phases[Math.min(4, Math.floor(t / 16))]}`;
+    const second = Math.floor(t), phase = Math.min(4, Math.floor(t / 16));
+    if (second !== lastSongSecond) {
+      lastSongSecond = second;
+      $("#song-time").textContent = `${Math.floor(t / 60)}:${String(second % 60).padStart(2, "0")} / 1:20`;
+    }
+    if (phase !== lastPhase) {
+      lastPhase = phase;
+      $("#phase").textContent = `${level.name.toLocaleUpperCase("es")} · ${phases[phase]}`;
+    }
     if (run.dead) finishRun(false);
     else if (t >= DURATION) finishRun(true);
   } else if (mode === "countdown") {
@@ -535,7 +546,7 @@ function openSettings() {
   if (["playing", "tutorial", "countdown"].includes(mode)) pause();
   showDialog(
     "A tu ritmo",
-    `<p class="dialog-intro">Los ajustes se guardan en este dispositivo.</p>${themePicker()}<label class="setting-row"><span><strong>Sonido</strong><small>Música y efectos de la partida</small></span><input type="checkbox" id="sound-setting" ${settings.sound ? "checked" : ""}/></label><label class="setting-row"><span><strong>Vibración</strong><small>${typeof navigator.vibrate === "function" ? "Un pequeño pulso al tocar" : "No disponible en este navegador"}</small></span><input type="checkbox" id="vibration-setting" ${settings.vibration ? "checked" : ""} ${typeof navigator.vibrate !== "function" ? "disabled" : ""}/></label><label class="setting-row"><span><strong>Efectos reducidos</strong><small>Menos partículas y movimiento</small></span><input type="checkbox" id="reduced-setting" ${settings.reduced ? "checked" : ""}/></label><div class="sync-setting"><label for="offset-setting">Sincronización <output id="offset-value">${settings.offset} ms</output></label><p>Si el sonido llega tarde, mueve el ajuste a la derecha. La pista visual se retrasará junto con los toques.</p><input type="range" min="-200" max="200" step="10" value="${settings.offset}" id="offset-setting"/><div class="range-labels"><span>−200 ms</span><button class="text-button" id="reset-offset">Restablecer</button><span>+200 ms</span></div></div><button class="secondary full" id="practice-button">Repetir tutorial</button>`,
+    `<p class="dialog-intro">Los ajustes se guardan en este dispositivo.</p><a class="secondary full" href="${assetUrl("lite.html")}">Activar modo ultraligero</a><p class="dialog-intro">Para celulares antiguos: dibujo 2D, objetivo 30 FPS, sin partículas ni decoración. Conserva la música, los niveles y tus récords. Vuelve a la portada sin continuar la partida actual.</p>${themePicker()}<label class="setting-row"><span><strong>Sonido</strong><small>Música y efectos de la partida</small></span><input type="checkbox" id="sound-setting" ${settings.sound ? "checked" : ""}/></label><label class="setting-row"><span><strong>Vibración</strong><small>${typeof navigator.vibrate === "function" ? "Un pequeño pulso al tocar" : "No disponible en este navegador"}</small></span><input type="checkbox" id="vibration-setting" ${settings.vibration ? "checked" : ""} ${typeof navigator.vibrate !== "function" ? "disabled" : ""}/></label><label class="setting-row"><span><strong>Efectos reducidos</strong><small>Menos partículas y movimiento</small></span><input type="checkbox" id="reduced-setting" ${settings.reduced ? "checked" : ""}/></label><div class="sync-setting"><label for="offset-setting">Sincronización <output id="offset-value">${settings.offset} ms</output></label><p>Si el sonido llega tarde, mueve el ajuste a la derecha. La pista visual se retrasará junto con los toques.</p><input type="range" min="-200" max="200" step="10" value="${settings.offset}" id="offset-setting"/><div class="range-labels"><span>−200 ms</span><button class="text-button" id="reset-offset">Restablecer</button><span>+200 ms</span></div></div><button class="secondary full" id="practice-button">Repetir tutorial</button>`,
   );
   dialog
     .querySelectorAll<HTMLInputElement>('input[name="theme"]')

@@ -2,7 +2,20 @@
 
 Fecha: 16 de septiembre de 2026. Pruebas de navegador realizadas en el navegador integrado de Codex, con resoluciones CSS de 390×844, 320×568 y 1280×900. Esas resoluciones no implican pruebas en equipos físicos.
 
-## Actualización vigente: cuatro dificultades y aterrizajes
+## Actualización vigente: ultraligero y reducción de trabajo
+
+- **63/63 pruebas aprobadas**. Se mantienen las pruebas anteriores y se añaden límites de resolución, recorrido de notas visibles, equivalencia de puntuación a 15/30 FPS en las cuatro dificultades, presupuesto de tamaño y análisis de sintaxis ES5. Un entorno JavaScript simulado sin Map, Set, Promise, Array.find/includes, Number.isFinite, Object.assign, Web Audio ni requestAnimationFrame inicia, arranca audio clásico y pausa el código real compilado. Es una prueba de compatibilidad lógica, no un emulador de Android antiguo.
+- Modo completo: medición sintética de 320 fotogramas sobre Servellon. Antes: **192.110 lecturas de notas** (600/fotograma); después: **9.189** (29/fotograma). Las **131.752 llamadas gráficas permanecen iguales**. Se reduce aproximadamente 95 % de esas lecturas, no se afirma 95 % más FPS. HUD: formato numérico reutilizado y etiquetas de segundos/fase actualizadas solo al cambiar.
+- Modo ultraligero: JavaScript cercano a **20 KB sin comprimir / 8 KB gzip**, validado ES5 y sin dependencias de ejecución. No descarga Phaser ni fuentes. A 320×533 CSS se verificó un lienzo interno **240×400**, un solo script (`lite.js`) y ausencia de desbordamiento horizontal. Límite de dibujo: 30 FPS objetivo; el contador visible registró alrededor de 30 en este navegador. No incluye los redibujados inmediatos de entrada.
+- Servellon completo en navegador, 80 s, entradas de teclado controladas y dos pausas: **203 Perfectos, 196 Buenos, 2 fallos, combo máximo 272, 19 cristales, 119.155 puntos y dos estrellas**. Hasta 27 s se registraron 137 aciertos seguidos sin fallo. Las pausas de captura/automatización causaron retrasos de entrada: no es una medida de destreza humana. Sin errores de consola durante esta partida. Capturas: `lite-gameplay.png`, `lite-results.png`.
+- Verificada práctica de tres pasos izquierda/derecha/centro, HUD limpio al repetir, selección de nivel/color, récord e intentos compartidos y vuelta al modo completo. Tras la optimización el completo inició Titi, puntuó un Perfecto y pausó correctamente. En pantalla corta se confirmó que la pausa ligera no tapa el HUD (panel a 105px, HUD hasta 86px); captura `lite-pause.png`.
+- Offline con **PWA completa previamente guardada**: se apagó el proceso de preview, se confirmó rechazo de conexión HTTP, se recargó `lite.html` y se inició Neon Sprint desde caché. Se probaron derrota, repetición, pausa y continuación sin música; el reloj pausado permaneció fijo. Se restauró el servidor después. No se afirma una partida completa offline en esta prueba.
+- Entrar directamente al ligero **no registra un service worker nuevo** ni precarga cuatro canciones; requiere conexión salvo caché existente. Si hay registro previo, se consultan actualizaciones y se aplican solo al pulsar el botón del inicio. Navegadores sin service workers no tienen garantía offline ni instalación. La preferencia de modo persiste; el arranque de la portada carga Phaser solo para modo completo.
+- Compilaciones de producción correctas en `/` y `/pulse-road/`. Auditoría npm: cero vulnerabilidades. Presupuesto automático: menos de 50 KB de JavaScript para el ligero, con construcción también desde un checkout nuevo antes de las pruebas.
+
+**Pendiente:** probar en el Samsung S3 Mini físico y conocer navegador/versión de Android. ES5, una resolución emulada y un contador del ordenador no garantizan compatibilidad HTTPS, audio ni fluidez en ese teléfono. No se han hecho perfiles físicos de GPU, batería o memoria; Android/iPhone reales siguen pendientes.
+
+## Historial: cuatro dificultades y aterrizajes
 
 Esta sección sustituye las reglas y cifras de las versiones históricas que siguen debajo.
 

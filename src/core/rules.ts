@@ -5,13 +5,21 @@ export interface Hit { note: Note; judgment: Judgment; delta: number; crystal: b
 // Matches the visible lane transition, not a hidden tap window.
 export const SETTLE_TIME = 0.045;
 const EPS = 1e-8;
+// IDs are consecutive small integers. An indexed log avoids a Map dependency
+// in the ES5 ultralight build and is also cheaper to query during rendering.
+export class JudgmentLog {
+  private values: Judgment[] = [];
+  has(id: number) { return this.values[id] !== undefined; }
+  get(id: number) { return this.values[id]; }
+  set(id: number, judgment: Judgment) { this.values[id] = judgment; return this; }
+}
 export class Run {
   score = 0; energy = 100; combo = 0; maxCombo = 0;
   perfect = 0; good = 0; misses = 0; crystals = 0; index = 0;
   finished = false;
   lane: Lane = 1;
   private enteredAt = -Infinity;
-  readonly judged = new Map<number, Judgment>();
+  readonly judged = new JudgmentLog();
   constructor(readonly notes: readonly Note[], readonly level: Level = getLevel("medio")) {}
   get multiplier() { return Math.min(4, 1 + Math.floor(this.combo / 10)); }
   get accuracy() { return this.notes.length ? Math.round(100 * (this.perfect + this.good * 0.6) / this.notes.length) : 0; }
@@ -19,7 +27,7 @@ export class Run {
   get stars() { return !this.finished || this.dead ? 0 : this.accuracy >= 90 ? 3 : this.accuracy >= 75 ? 2 : 1; }
   advance(time: number): Hit[] {
     const hits: Hit[] = [];
-    if (!Number.isFinite(time) || this.finished || this.dead) return hits;
+    if (typeof time !== "number" || !isFinite(time) || this.finished || this.dead) return hits;
     while (this.index < this.notes.length && !this.dead) {
       const note = this.notes[this.index];
       if (time + EPS < note.time) break;
@@ -35,7 +43,7 @@ export class Run {
     return hits;
   }
   tap(lane: Lane, time: number): Hit[] {
-    if (![0, 1, 2].includes(lane) || !Number.isFinite(time) || this.finished || this.dead) return [];
+    if ((lane !== 0 && lane !== 1 && lane !== 2) || typeof time !== "number" || !isFinite(time) || this.finished || this.dead) return [];
     // Resolve elapsed landings BEFORE changing lanes, including between frames.
     const hits = this.advance(time);
     if (this.dead) return hits;

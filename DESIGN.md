@@ -108,6 +108,12 @@ La selección de carril pertenece al toque, no al resultado de puntuación. El m
 
 ## Do's and Don'ts
 
+### Variante ultraligera
+
+`lite.html` conserva las señales esenciales con una pista recta de tres carriles, plataformas marfil, peligros con X, cristales romboidales y un anillo breve en los Perfectos. No replica la perspectiva ni los guiños decorativos: prioriza legibilidad y coste mínimo. Usa Arial del sistema, fondos opacos y controles de al menos 44px; el lienzo interno se limita a 240px de ancho y el dibujo a 30 FPS objetivo. Sin partículas, desenfoque, sombras animadas, saltos o vibración. La entrada pinta el carril inmediatamente, sin esperar el siguiente turno de dibujo. Esta excepción es deliberada y distinta de «Efectos reducidos» del modo completo.
+
+El selector de modo está en portada y ajustes. Se guarda localmente y ofrece vuelta al completo. Los menús cortos pueden desplazarse en pantallas pequeñas; el HUD se conserva separado del diálogo de pausa. La puntuación, dificultad y récord son compartidos entre ambos renderizadores.
+
 ### Do:
 
 - **Do** conservar una acción principal clara en cada pantalla.

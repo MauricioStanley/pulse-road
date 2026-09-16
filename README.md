@@ -1,6 +1,6 @@
 # Pulse Road
 
-[Jugar ahora](https://mauriciostanley.github.io/pulse-road/) · [QR para compartir](qr/pulse-road.png)
+[Jugar ahora](https://mauriciostanley.github.io/pulse-road/) · [Modo ultraligero](https://mauriciostanley.github.io/pulse-road/lite.html) · [QR para compartir](qr/pulse-road.png)
 
 Juego de ritmo móvil de 80 segundos. Escanea una URL publicada, toca uno de tres carriles y supera tu récord. No utiliza cuentas, anuncios ni servicios de pago durante la partida.
 
@@ -88,9 +88,28 @@ En **Ajustes → Color del juego** elige Menta, Morado, Rojo o Verde. Cambian la
 
 Sonido, vibración compatible, efectos reducidos y desfase de −200 a +200 ms. Un desfase positivo retrasa la pista y la evaluación del toque para compensar una salida de audio tardía. Los auriculares Bluetooth pueden necesitar ajuste.
 
+## Celulares lentos: modo ultraligero
+
+Abre **Ultraligero** en la portada o **Ajustes → Activar modo ultraligero**. También puedes compartir directamente https://mauriciostanley.github.io/pulse-road/lite.html. No hace falta cargar el juego completo primero. El navegador recuerda el modo elegido; «Volver al modo completo» restaura el original. Cambiar de modo abandona la partida actual, no el récord.
+
+- Canvas 2D nativo, sin Phaser, WebGL ni tipografías descargadas. JavaScript de unos **20 KB sin comprimir / 8 KB gzip**, frente al motor normal de 1,2 MB sin comprimir (cifra del motor, no de toda la página).
+- Dibujo con objetivo **30 FPS**, resolución interna máxima de 240 px de ancho y respuesta de carril dibujada directamente al tocar. El contador inferior mide los fotogramas programados, no incluye los redibujados adicionales de entrada.
+- Sin partículas, perspectiva, saltos, estela, decoraciones ni vibración. Conserva un anillo para Perfectos, señales de fallo, plataformas, obstáculos marcados con X y cristales.
+- Las mismas cuatro pistas, reglas, colores, intentos y récords. Música mediante el reproductor de audio del navegador; solo se solicita la canción elegida, aproximadamente 1,1–1,3 MB. El sonido de daño es opcional si el navegador dispone de Web Audio.
+- Tres pasos de práctica sin daño, controles izquierda/centro/derecha y pausa. Se puede continuar sin música ante problemas de audio; no se exige una cuenta atrás al reanudar en este modo.
+- Compilado como script clásico con sintaxis ES5, comprobado automáticamente. La portada normal ofrece un enlace HTML al ligero incluso si ese navegador no ejecuta módulos modernos.
+
+**Conexión:** entrar directamente al ligero no instala el service worker del juego completo ni descarga sus cuatro canciones. Para esta ruta directa cuenta con conexión: la caché HTTP del navegador no garantiza jugar sin internet. Si ya guardaste la PWA completa y viste «Disponible sin conexión», su caché incluye también el modo ligero y las cuatro canciones. En ese caso se comprueban actualizaciones de la instalación existente y se ofrecen en el inicio, sin recargar una partida. En navegadores sin service workers, no hay modo offline garantizado ni instalación PWA.
+
+No se garantiza rendimiento ni compatibilidad en el Samsung S3 Mini físico: un navegador/Android antiguo puede limitar HTTPS, Canvas o audio. No ignores advertencias de seguridad del navegador. Si no abre o sigue lento, informa del navegador, versión de Android y FPS observados. La emulación de pantalla y las pruebas ES5 no sustituyen ese dispositivo.
+
 ## Estructura
 
 - `src/core/`: recorrido, puntuación y reglas independientes de gráficos.
+- `src/entry.ts`: arranque ligero que recuerda el modo, sin cargar Phaser cuando no hace falta.
+- `src/lite/`: reproductor de bajo consumo y renderizador Canvas 2D, con las reglas compartidas.
+- `public/lite.html` y `public/lite.css`: interfaz clásica para dispositivos antiguos.
+- `scripts/build-lite.mjs`: genera `public/lite.js`, verifica ES5, ausencia de dependencias de ejecución y presupuesto de 50 KB. Se ejecuta al probar, compilar o iniciar desarrollo.
 - `src/audio/conductor.ts`: carga, reproducción, reloj, pausa y efectos.
 - `src/game/RoadScene.ts`: pista 2D con perspectiva y esfera.
 - `src/main.ts`: pantallas, controles y ciclo de vida.

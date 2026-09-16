@@ -1,13 +1,14 @@
 import Phaser from "phaser";
 import type { Lane, Note } from "../core/chart";
 import type { Judgment } from "../core/rules";
+import { firstNoteAt } from "../core/visible";
 import { themes, getTheme, colorNumber, type ThemeId } from "../themes";
 
 export interface RoadView {
   mode: string;
   time: number;
   notes: readonly Note[];
-  judged?: Map<number, Judgment>;
+  judged?: { has(id: number): boolean };
   reduced: boolean;
   combo: number;
   active: boolean;
@@ -330,10 +331,13 @@ export class RoadScene extends Phaser.Scene {
         this.tile(demo[i], depth, false, i % 3 === 0, now);
       }
     } else {
-      for (const note of view.notes) {
+      const first = firstNoteAt(view.notes, view.time - 0.25);
+      for (let index = first; index < view.notes.length; index++) {
+        const note = view.notes[index];
         const until = note.time - view.time;
         const approach = view.travel ?? 2;
-        if (until > approach + 0.1 || until < -0.25 || view.judged?.has(note.id)) continue;
+        if (until > approach + 0.1) break;
+        if (view.judged?.has(note.id)) continue;
         const depth = 1 - until / approach;
         for (const lane of note.obstacles)
           this.tile(lane, depth, true, false, now);
@@ -356,7 +360,10 @@ export class RoadScene extends Phaser.Scene {
     // settles within 100 ms at 30/60/120 FPS, even across the full track.
     this.ballX += (target.x - this.ballX) * (1 - Math.exp(-delta / 14));
     if (Math.abs(target.x - this.ballX) < 0.5) this.ballX = target.x;
-    const upcoming = view.notes.find(note => note.time >= view.time && !view.judged?.has(note.id));
+    let upcoming: Note | undefined;
+    for (let index = firstNoteAt(view.notes, view.time); index < view.notes.length; index++) {
+      if (!view.judged?.has(view.notes[index].id)) { upcoming = view.notes[index]; break; }
+    }
     const flight = upcoming ? Math.min(0.26, (upcoming.time - (view.notes[upcoming.id - 1]?.time ?? upcoming.time - 1)) * 0.82) : 0.26;
     const untilLanding = upcoming ? upcoming.time - view.time : Infinity;
     // The hop meets the platform at its musical landing, even if steering early.

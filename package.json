@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/build-lite.mjs",
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/build-lite.mjs && tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "test": "vitest run tests",
     "package": "node scripts/package.mjs",
@@ -18,11 +19,13 @@
     "phaser": "3.90.0"
   },
   "devDependencies": {
+    "acorn": "^8.18.0",
+    "esbuild": "^0.28.2",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.35.4",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.1.11",
-    "sharp": "^0.35.4",
-    "qrcode": "^1.5.4"
+    "vitest": "^4.1.11"
   }
 }

@@ -426,7 +426,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 24px;
+    gap: 12px;
     margin-top: 6px;
   }
   .home-links .text-button {
