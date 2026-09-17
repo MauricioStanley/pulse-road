@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { Run, SETTLE_TIME } from "../src/core/rules";
 import { createChart, type Note, type Lane } from "../src/core/chart";
-import { levels, getLevel } from "../src/core/levels";
+import { levels, getLevel, levelLabel } from "../src/core/levels";
 import { encouragements, lossMessages, nextMessage } from "../src/core/messages";
 const notes = (count = 40, lane: Lane = 0): Note[] => Array.from({length:count},(_,id)=>({id,time:1+id*0.5,lane,crystal:false,obstacles:[]}));
 describe("Visual landing contract", () => {
+  it("uses the requested names without duplicate subtitles and preserves saved IDs", () => {
+    expect(levelLabel(getLevel("titi"))).toBe("Fácil");
+    expect(levelLabel(getLevel("servellon"))).toBe("Pesadilla");
+    expect(levels.map(level => level.id)).toEqual(["titi", "medio", "dificil", "servellon"]);
+    expect(levels.map(level => level.name)).toEqual(["Fácil", "Medio", "Difícil", "Pesadilla"]);
+  });
   it.each([0.05,0.12,0.3,0.7])("accepts a lane selected %s seconds early, but scores only on landing", early => {
     const run = new Run(notes(1));
     expect(run.tap(0,1-early)).toEqual([]);
@@ -86,7 +92,7 @@ describe("Visual landing contract", () => {
       });
     }
   });
-  it("Servellon punishes unattended play and is denser than 300 platforms", () => {
+  it("Pesadilla punishes unattended play and is denser than 300 platforms", () => {
     const level=getLevel("servellon"),chart=createChart(level),run=new Run(chart,level);
     expect(chart.length).toBeGreaterThan(300);
     for(let t=0;t<10;t+=1/60)run.advance(t);

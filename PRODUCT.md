@@ -13,7 +13,7 @@ Optional ultralight player at `lite.html`: native Canvas 2D, ES5 classic script,
 Visitors at a student project event, playing immediately on their own mobile phones through a QR.
 
 ## Product Purpose
-An original, one-handed rhythm game. Four 80-second songs and difficulties: Titi, Medio, Difícil, Servellon. Three direct touch lanes, deterministic charts, early lane positioning scored on landing, tutorial, energy, combo, crystals, per-level records and attempts, replay.
+An original, one-handed rhythm game. Four 80-second songs and difficulties: Fácil, Medio, Difícil, Pesadilla. Three direct touch lanes, deterministic charts, early lane positioning scored on landing, tutorial, energy, combo, crystals, per-level records and attempts, replay.
 
 ## Operating Context
 Spanish interface. Variable connectivity. Android and iPhone browsers, installation optional. Desktop keyboard support for development and demonstration.

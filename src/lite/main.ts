@@ -1,5 +1,5 @@
 import { createChart, CHART_VERSION, type Lane } from "../core/chart";
-import { levels, getLevel } from "../core/levels";
+import { levels, getLevel, levelLabel } from "../core/levels";
 import { Run, type Hit } from "../core/rules";
 import { encouragements, lossMessages, nextMessage } from "../core/messages";
 import { themes } from "../themes";
@@ -73,7 +73,7 @@ function home() {
   stopMusic();silent=false;selectLane(1);setText(feedback,"");setText(encouragement,"");
   state("home");setText(song,"Sin Phaser · dibujo 2D · objetivo 30 FPS");
   let options="",colors="";
-  for(let i=0;i<levels.length;i++){const l=levels[i];options+='<option value="'+l.id+'"'+(l.id===level.id?' selected':'')+'>'+l.name+' · '+l.subtitle+'</option>';}
+  for(let i=0;i<levels.length;i++){const l=levels[i];options+='<option value="'+l.id+'"'+(l.id===level.id?' selected':'')+'>'+levelLabel(l)+'</option>';}
   for(let i=0;i<themes.length;i++)colors+='<option value="'+themes[i].id+'"'+(themes[i].id===palette.id?' selected':'')+'>'+themes[i].name+'</option>';
   panel.innerHTML='<h1>Pulse Road</h1><p>Menos efectos. El mismo ritmo.<br>Colócate antes de que llegue la plataforma.</p><label for="level">Dificultad</label><select id="level">'+options+'</select><p id="track-info">'+level.track+' · '+level.bpm+' BPM · 80 s</p><div class="record">Récord: '+finite(read(recordKey()))+' · Intentos: '+finite(read(attemptKey()))+'</div><button id="play">Jugar</button><div class="switches"><button id="sound" class="secondary" aria-pressed="'+sound+'">Sonido: '+(sound?'sí':'no')+'</button><button id="practice" class="secondary">Cómo jugar</button></div><label for="color">Color de la esfera</label><select id="color">'+colors+'</select><p class="notice">Sin partículas, saltos decorativos ni vibración. Conserva plataformas, peligros, cristales y puntuación.</p><div class="links"><a id="full-mode" href="./">Volver al modo completo</a></div><p class="notice">En navegadores antiguos, la instalación y el modo sin conexión pueden no estar disponibles.</p>';
   el("play").style.backgroundColor=palette.accent;

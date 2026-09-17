@@ -28,19 +28,19 @@ Elige la dificultad en la portada. Todas duran 80 segundos y tienen música orig
 
 | Nivel | Canción | Tempo | Daño / recuperación |
 | --- | --- | --- | --- |
-| Titi · Fácil | Pequeña Órbita | 96 BPM | −14 / +3 |
+| Fácil | Pequeña Órbita | 96 BPM | −14 / +3 |
 | Medio | First Light | 120 BPM | −20 / +2 |
 | Difícil | Neon Sprint | 150 BPM | −28 / +1 |
-| Servellon · Pesadilla | Umbral Cero | 180 BPM | −40 / +0,5 |
+| Pesadilla | Umbral Cero | 180 BPM | −40 / +0,5 |
 
-Servellon tiene 401 plataformas, ráfagas de hasta 6 por segundo y patrones fijos con pequeños descansos. Está pensado para aprender mediante muchos intentos; no existe una cantidad garantizada de intentos para dominarlo. Los récords e intentos se guardan por dificultad. Los récords de la versión anterior se conservan en su antigua clave, pero no se mezclan con estas reglas nuevas.
+Pesadilla tiene 401 plataformas, ráfagas de hasta 6 por segundo y patrones fijos con pequeños descansos. Está pensado para aprender mediante muchos intentos; no existe una cantidad garantizada de intentos para dominarlo. Los récords e intentos se guardan por dificultad. Los récords de la versión anterior se conservan en su antigua clave, pero no se mezclan con estas reglas nuevas.
 
 ## Controles y reglas
 
 - Toca izquierda, centro o derecha **antes** de que llegue la plataforma. El movimiento es inmediato y la puntuación llega al aterrizar.
 - Puedes permanecer en un carril para varias plataformas seguidas. Salirte antes de aterrizar no cuenta como acierto.
 - Perfecto: ya estabas en el carril al aterrizar. Bien: llegaste dentro del pequeño margen tardío. La transición visual tiene 45 ms de asentamiento.
-- Margen tardío por nivel: Titi 200 ms; Medio 140 ms; Difícil 100 ms; Servellon 65 ms. No hay penalización por seleccionar anticipadamente el siguiente carril después del aterrizaje anterior.
+- Margen tardío por nivel: Fácil 200 ms; Medio 140 ms; Difícil 100 ms; Pesadilla 65 ms. No hay penalización por seleccionar anticipadamente el siguiente carril después del aterrizaje anterior.
 - En computadora: flechas izquierda, abajo y derecha; A, S y D. Escape pausa.
 - Empiezas con 100 de energía. Daño y recuperación dependen del nivel.
 - Multiplicador ×2 con 10 aciertos, ×3 con 20 y ×4 con 30. Perfecto: 100 puntos × multiplicador; Bien: 60 × multiplicador.

@@ -10,7 +10,7 @@ import {
   type Lane,
   type Note,
 } from "./core/chart";
-import { getLevel, levels } from "./core/levels";
+import { getLevel, levels, levelLabel } from "./core/levels";
 import { encouragements, lossMessages, nextMessage } from "./core/messages";
 import { Run, type Hit } from "./core/rules";
 import { Conductor } from "./audio/conductor";
@@ -184,7 +184,7 @@ function cacheLabel() {
     : `${icon("headphones")} Mejor con sonido · También puedes jugar en silencio`;
 }
 function levelPicker() {
-  return `<div class="level-picker"><label for="difficulty">Elige tu dificultad</label><select id="difficulty" aria-label="Elige tu dificultad" aria-describedby="level-info">${levels.map(item => `<option value="${item.id}" ${item.id === level.id ? "selected" : ""}>${item.name} · ${item.subtitle}</option>`).join("")}</select><p id="level-info">${level.track} · ${level.bpm} BPM${level.id === "servellon" ? " · 6 saltos/s" : ""}</p></div>`;
+  return `<div class="level-picker"><label for="difficulty">Elige tu dificultad</label><select id="difficulty" aria-label="Elige tu dificultad" aria-describedby="level-info">${levels.map(item => `<option value="${item.id}" ${item.id === level.id ? "selected" : ""}>${levelLabel(item)}</option>`).join("")}</select><p id="level-info">${level.track} · ${level.bpm} BPM${level.id === "servellon" ? " · 6 saltos/s" : ""}</p></div>`;
 }
 function home() {
   loadingGeneration++;
