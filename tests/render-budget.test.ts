@@ -11,11 +11,13 @@ it("measures draw commands and chart reads over a complete nightmare",()=>{
   const notes=new Proxy(createChart(getLevel("servellon")),{get(target,key,receiver){if(typeof key==="string" && /^\d+$/.test(key))reads++;return Reflect.get(target,key,receiver);}});
   Object.assign(scene,{ink,ball,ballX:195});
   let time=0;
-  scene.getView=()=>({mode:"playing",time,notes,reduced:false,combo:40,active:true,travel:1.25,easterEggs:true});
+  scene.getView=()=>({mode:"playing",time,notes,reduced:false,combo:40,active:true,travel:1.25,bpm:180,energy:30,shields:1});
   for(let i=0;i<320;i++){time=i/4;scene.update(time*1000,16.667);}
   const metrics={frames:320,graphicsCalls:commands,chartReads:reads,meanGraphicsCalls:Math.round(commands/320),meanChartReads:Math.round(reads/320)};
   console.log("RENDER_BUDGET",JSON.stringify(metrics));
   expect(commands).toBeGreaterThan(0);
   // Before optimization: 192,110 reads. Preserve visible output with bounded work.
   expect(reads).toBeLessThan(12000);
+  // Worst case (Fever, low energy, shield, particles): keep near the pre-Infinito cost.
+  expect(commands/320).toBeLessThan(800);
 });

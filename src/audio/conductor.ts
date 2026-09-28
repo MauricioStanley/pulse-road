@@ -18,6 +18,9 @@ export class Conductor {
   private loadPromise?: Promise<void>;
   private loadedFile = "";
   private loadGeneration = 0;
+  /** Song seconds per real second. Infinito speeds the song up. */
+  private rate = 1;
+  private loop?: { start: number; end: number };
   onInterruption?: () => void;
 
   async unlock() {
@@ -84,28 +87,61 @@ export class Conductor {
       if (this.loadPromise === pending) this.loadPromise = undefined;
     }
   }
+  private get now() {
+    return this.silent ? performance.now() / 1000 : this.context!.currentTime;
+  }
+  /** Song time: keeps counting across loops, so charts never wrap. */
   get time() {
     if (!this.running) return this.position;
-    const now = this.silent
-      ? performance.now() / 1000
-      : this.context!.currentTime;
-    return this.position + Math.max(0, now - this.startAt);
+    return this.position + Math.max(0, this.now - this.startAt) * this.rate;
   }
-  play(position = 0, silent = false) {
+  get speed() {
+    return this.rate;
+  }
+  /** Where a song time falls inside the audio file. */
+  private offsetOf(time: number) {
+    const loop = this.loop;
+    if (!loop || time < loop.end) return time;
+    return loop.start + ((time - loop.start) % (loop.end - loop.start));
+  }
+  /**
+   * Starts at a song time. Options persist until the next reset(): a paused
+   * Infinito resumes with the same loop and speed.
+   */
+  play(position = 0, silent = false, options?: { loop?: { start: number; end: number }; rate?: number }) {
     this.stopSource();
     this.restoreMusic();
+    if (options) {
+      this.loop = options.loop;
+      this.rate = options.rate ?? 1;
+    }
     this.position = position;
     this.silent = silent;
-    this.startAt = silent
-      ? performance.now() / 1000
-      : this.context!.currentTime;
-    if (!silent && this.buffer && position < this.buffer.duration) {
+    this.startAt = this.now;
+    const offset = this.offsetOf(position);
+    if (!silent && this.buffer && (this.loop || offset < this.buffer.duration)) {
       this.source = this.context!.createBufferSource();
       this.source.buffer = this.buffer;
+      if (this.loop) {
+        this.source.loop = true;
+        this.source.loopStart = this.loop.start;
+        this.source.loopEnd = this.loop.end;
+      }
+      if (this.rate !== 1) this.source.playbackRate?.setValueAtTime(this.rate, this.startAt);
       this.source.connect(this.gain!);
-      this.source.start(this.startAt, position);
+      this.source.start(this.startAt, offset);
     }
     this.running = true;
+  }
+  /** Changes speed now, re-anchoring the clock so song time stays continuous. */
+  setRate(rate: number) {
+    if (!(rate > 0) || rate === this.rate) return;
+    if (this.running) {
+      this.position = this.time;
+      this.startAt = this.now;
+      this.source?.playbackRate?.setValueAtTime(rate, this.silent ? this.context?.currentTime ?? 0 : this.startAt);
+    }
+    this.rate = rate;
   }
   pause() {
     this.position = this.time;
@@ -116,6 +152,8 @@ export class Conductor {
   reset() {
     this.pause();
     this.position = 0;
+    this.rate = 1;
+    this.loop = undefined;
   }
   private stopSource() {
     if (this.source) {
@@ -202,8 +240,8 @@ export class Conductor {
     const now = this.context.currentTime;
     const rate = this.source?.playbackRate;
     if (rate) {
-      rate.setValueAtTime(1, now);
-      rate.exponentialRampToValueAtTime(0.3, now + duration);
+      rate.setValueAtTime(this.rate, now);
+      rate.exponentialRampToValueAtTime(this.rate * 0.3, now + duration);
     }
     this.gain.gain.setTargetAtTime(0, now + duration * 0.3, duration * 0.25);
     if (!this.live) return;

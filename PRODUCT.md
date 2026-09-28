@@ -13,13 +13,13 @@ Optional ultralight player at `lite.html`: native Canvas 2D, ES5 classic script,
 Visitors at a student project event, playing immediately on their own mobile phones through a QR.
 
 ## Product Purpose
-An original, one-handed rhythm game. Four 80-second songs and difficulties: Fácil, Medio, Difícil, Pesadilla. Three direct touch lanes, deterministic charts, early lane positioning scored on landing, tutorial, energy, combo, crystals, per-level records and attempts, replay. Beat-reactive world, musical hit sounds in each song key, Fever at combo 30 (visual only), slow-motion fall, best progress percent, lifetime crystal balance unlocking seven orbs, score sharing.
+An original, one-handed rhythm game. Four 80-second songs and difficulties: Fácil, Medio, Difícil, Pesadilla. Three direct touch lanes, deterministic charts, early lane positioning scored on landing, tutorial, energy, combo, crystals, per-level records and attempts, replay. Beat-reactive world, musical hit sounds in each song key, Fever at combo 30 (visual only in songs), slow-motion fall, best progress percent, score sharing. Infinito (seeded endless road over looping First Light, +5 % speed per 16 s stage, power-ups: shield, heart, double points, slow motion) and a date-seeded daily challenge. Fourteen orbs unlocked by lifetime crystals, player level or feats; each orb has a perk that only applies in Infinito/daily so song records stay comparable. Ten original rhythm relics on fixed platforms (Perfect to collect; all ten unlock an orb). Player level from experience on every run, three rotating missions with crystal rewards, record ghost per song. Controls: buttons, drag (three screen columns) or swipe.
 
 ## Operating Context
 Spanish interface. Variable connectivity. Android and iPhone browsers, installation optional. Desktop keyboard support for development and demonstration.
 
 ## Capabilities and Constraints
-Perfect when settled in lane on landing; Good within level-specific late grace (200/140/100/65ms). Visible movement settles for scoring in 45ms. Start at 100 energy; damage 14/20/28/40, recovery 3/2/1/0.5. Nightmare peaks at 6 targets/sec; never simultaneous targets. Original musical/SFX and geometric easter eggs; motivational text. Combo multipliers at 10/20/30. Offline after complete download. Pause on visibility loss and landscape mobile. Do not claim physical-device testing or public hosting without evidence.
+Perfect when settled in lane on landing; Good within level-specific late grace (200/140/100/65ms). Visible movement settles for scoring in 45ms. Start at 100 energy; damage 14/20/28/40, recovery 3/2/1/0.5. Nightmare peaks at 6 targets/sec; never simultaneous targets. Original musical/SFX, original rhythm relics (the earlier roadside homages were removed); motivational text. Combo multipliers at 10/20/30. Offline after complete download. Pause on visibility loss and landscape mobile. Do not claim physical-device testing or public hosting without evidence.
 
 ## Brand Commitments
 Approved visual world: dark navy suspended circuit, ivory tiles, turquoise energy, coral hazards, original sphere and artwork. Game-native home screen.

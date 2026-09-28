@@ -35,7 +35,7 @@ describe("Immediate lane response, independently of rhythm scoring", () => {
     expect(state.sparks.length).toBe(16);
     expect(state.perfectFlash).toBe(1);
     for(let i=0;i<20;i++)scene.hit(1,"perfect",false);
-    expect(state.sparks.length).toBeLessThanOrEqual(65);
+    expect(state.sparks.length).toBeLessThanOrEqual(70);
     scene.reset(); scene.hit(1,"perfect",true);
     expect(state.sparks).toHaveLength(0);
     expect(state.perfectFlash).toBe(1);

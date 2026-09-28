@@ -1,7 +1,17 @@
-import type { Lane, Note } from "./chart";
+import type { Lane, Note, PowerId } from "./chart";
 import { getLevel, type Level } from "./levels";
 export type Judgment = "perfect" | "good" | "miss";
-export interface Hit { note: Note; judgment: Judgment; delta: number; crystal: boolean }
+export interface Hit {
+  note: Note; judgment: Judgment; delta: number; crystal: boolean;
+  /** A relic collected with a Perfect on its platform. */
+  relic?: string;
+  /** Infinito: a power-up collected on landing. */
+  power?: PowerId;
+  /** Infinito: a shield absorbed this miss (no damage, combo kept). */
+  shielded?: boolean;
+  /** Infinito: a one-time rescue kept the run alive. */
+  saved?: boolean;
+}
 // Matches the visible lane transition, not a hidden tap window.
 export const SETTLE_TIME = 0.045;
 const EPS = 1e-8;
@@ -55,16 +65,23 @@ export class Run {
   private resolve(note: Note, judgment: Judgment, delta: number): Hit {
     this.judged.set(note.id, judgment);
     this.index++;
-    const crystal = judgment === "perfect" && note.crystal;
-    if (judgment === "miss") {
-      this.combo = 0; this.energy = Math.max(0, this.energy - this.level.damage); this.misses++;
-    } else {
-      this.combo++; this.maxCombo = Math.max(this.maxCombo, this.combo);
-      this.energy = Math.min(100, this.energy + this.level.recovery);
-      this.score += (judgment === "perfect" ? 100 : 60) * this.multiplier;
-      if (judgment === "perfect") this.perfect++; else this.good++;
-      if (crystal) { this.crystals++; this.score += 25; }
-    }
-    return { note, judgment, delta, crystal };
+    const hit: Hit = { note, judgment, delta, crystal: judgment === "perfect" && note.crystal };
+    if (judgment === "miss") this.onMiss(hit);
+    else this.onLand(hit);
+    return hit;
+  }
+  /** Extra score factor for special modes. Songs always score ×1. */
+  protected bonus(_note: Note) { return 1; }
+  protected onMiss(_hit: Hit) {
+    this.combo = 0; this.energy = Math.max(0, this.energy - this.level.damage); this.misses++;
+  }
+  protected onLand(hit: Hit) {
+    this.combo++; this.maxCombo = Math.max(this.maxCombo, this.combo);
+    this.energy = Math.min(100, this.energy + this.level.recovery);
+    const bonus = this.bonus(hit.note);
+    this.score += Math.round((hit.judgment === "perfect" ? 100 : 60) * this.multiplier * bonus);
+    if (hit.judgment === "perfect") this.perfect++; else this.good++;
+    if (hit.crystal) { this.crystals++; this.score += Math.round(25 * bonus); }
+    if (hit.judgment === "perfect" && hit.note.relic) hit.relic = hit.note.relic;
   }
 }

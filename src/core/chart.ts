@@ -1,6 +1,8 @@
 import { getLevel, type Level } from "./levels";
 export type Lane = 0 | 1 | 2;
-export interface Note { id: number; time: number; lane: Lane; crystal: boolean; obstacles: Lane[] }
+export type PowerId = "shield" | "heart" | "double" | "slow";
+// relic and power are optional overlays: they never change timing or lanes.
+export interface Note { id: number; time: number; lane: Lane; crystal: boolean; obstacles: Lane[]; relic?: string; power?: PowerId }
 export const DURATION = 80;
 export const CHART_VERSION = "landing-v2";
 export const TRACK_NAME = "First Light";

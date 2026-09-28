@@ -1,7 +1,8 @@
 import { CHART_VERSION } from "./core/chart";
 import { getLevel, levels, type Difficulty } from "./core/levels";
 import { getTheme, type ThemeId } from "./themes";
-import { getSkin, isUnlocked, type SkinId } from "./skins";
+import { getSkin, type SkinId } from "./skins";
+import { getControlMode, type ControlMode } from "./input/touch";
 export interface Settings {
   sound: boolean;
   vibration: boolean;
@@ -11,7 +12,11 @@ export interface Settings {
   theme: ThemeId;
   difficulty: Difficulty;
   skin: SkinId;
+  controls: ControlMode;
+  ghost: boolean;
+  homeTab: HomeTab;
 }
+export type HomeTab = "song" | "endless" | "daily";
 const defaultSettings: Settings = {
   sound: true,
   vibration: false,
@@ -21,9 +26,12 @@ const defaultSettings: Settings = {
   theme: "mint",
   difficulty: "titi",
   skin: "classic",
+  controls: "buttons",
+  ghost: true,
+  homeTab: "song",
 };
 export let storageAvailable = true;
-function read(key: string) {
+export function read(key: string) {
   try {
     return JSON.parse(localStorage.getItem(key) || "null");
   } catch {
@@ -31,7 +39,7 @@ function read(key: string) {
     return null;
   }
 }
-function write(key: string, value: unknown) {
+export function write(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
@@ -44,12 +52,14 @@ if (saved && typeof saved === "object") {
   settings.difficulty = getLevel(saved.difficulty).id;
   settings.theme = getTheme(saved.theme).id;
   settings.skin = getSkin(saved.skin).id;
-  for (const key of ["sound", "vibration", "reduced", "tutorial"] as const)
+  settings.controls = getControlMode(saved.controls);
+  if (saved.homeTab === "endless" || saved.homeTab === "daily") settings.homeTab = saved.homeTab;
+  for (const key of ["sound", "vibration", "reduced", "tutorial", "ghost"] as const)
     if (typeof saved[key] === "boolean") settings[key] = saved[key];
   if (Number.isFinite(saved.offset))
     settings.offset = Math.max(-200, Math.min(200, saved.offset));
 }
-const finiteScore = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
+export const finiteScore = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
 const bounded = (value: unknown, max: number) => Math.min(max, finiteScore(value));
 const perLevel = (prefix: string, max = Infinity) => Object.fromEntries(levels.map(level => [level.id, bounded(read(`${prefix}-${CHART_VERSION}-${level.id}`), max)])) as Record<Difficulty, number>;
 const records = perLevel("pulse-record");
@@ -89,8 +99,3 @@ export function addCrystals(count: number) {
   write("pulse-crystals-v1", crystals);
   return crystals;
 }
-/** A locked choice (for example, after clearing site data) falls back safely. */
-export const activeSkin = () => {
-  const skin = getSkin(settings.skin);
-  return isUnlocked(skin, crystals) ? skin : getSkin("classic");
-};

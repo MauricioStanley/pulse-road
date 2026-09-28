@@ -83,4 +83,27 @@ describe("Game feel", () => {
     };
     expect(alphaAt(20.0)).toBeGreaterThan(alphaAt(20.45) * 1.2);
   });
+  it("draws the record ghost, power-ups, relics and shields only when present", () => {
+    const count = (view: Partial<RoadView>) => {
+      const h = harness({ time: 1, ...view });
+      h.frame(); h.reset(); h.frame();
+      return { ...h.calls };
+    };
+    const notes = [{ id: 0, time: 1.5, lane: 1 as const, crystal: false, obstacles: [] }];
+    const plain = count({ notes });
+    expect((count({ notes, ghostLane: 0 }).strokeCircle ?? 0)).toBeGreaterThan(plain.strokeCircle ?? 0);
+    expect((count({ notes: [{ ...notes[0], power: "shield" as const }] }).fillPath ?? 0)).toBeGreaterThan(plain.fillPath ?? 0);
+    expect((count({ notes: [{ ...notes[0], relic: "vinyl" }] }).fillPath ?? 0)).toBeGreaterThan(plain.fillPath ?? 0);
+    const found = count({ notes: [{ ...notes[0], relic: "vinyl" }], relicFound: () => true });
+    expect(found.fillPath ?? 0).toBe(plain.fillPath ?? 0);
+    expect((count({ notes, shields: 2 }).strokeCircle ?? 0)).toBeGreaterThanOrEqual((plain.strokeCircle ?? 0) + 2);
+  });
+  it("absorbs a shielded miss without the red flash or a ball stumble", () => {
+    const { scene, ball, frame } = harness();
+    frame();
+    const restY = ball.y;
+    scene.hit(1, "miss", false, false, { shielded: true });
+    for (let i = 0; i < 6; i++) frame();
+    expect(ball.y).toBe(restY);
+  });
 });

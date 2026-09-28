@@ -183,4 +183,24 @@ describe("Audio transport", () => {
     c.play();
     expect(music.gain.setValueAtTime).toHaveBeenLastCalledWith(0.8, expect.any(Number));
   });
+  it("speeds up without breaking song time and loops on whole bars", async () => {
+    const c = new Conductor(); await c.unlock(); await c.load(() => {});
+    const ctx = FakeAudioContext.instance;
+    ctx.currentTime = 10;
+    c.play(0, false, { loop: { start: 16, end: 78 }, rate: 1 });
+    ctx.currentTime = 30;
+    expect(c.time).toBe(20);
+    c.setRate(1.5);
+    ctx.currentTime = 40;
+    expect(c.time).toBe(35);
+    expect(c.speed).toBe(1.5);
+    expect(c.pause()).toBe(35);
+    ctx.currentTime = 50;
+    c.play(100);
+    expect(ctx.sources[ctx.sources.length - 1].started).toEqual([50, 16 + ((100 - 16) % 62)]);
+    ctx.currentTime = 52;
+    expect(c.time).toBe(103);
+    c.reset();
+    expect(c.speed).toBe(1);
+  });
 });

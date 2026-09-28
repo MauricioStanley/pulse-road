@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { skins, getSkin, isUnlocked, nextSkin, unlockedBetween } from "../src/skins";
+import { skins, getSkin, isUnlocked, nextSkin, unlockedBetween, perksFor } from "../src/skins";
+import { basePerks } from "../src/core/endless";
 import { progressPercent } from "../src/core/progress";
 import { createChart, type Note } from "../src/core/chart";
 import { getLevel, levels } from "../src/core/levels";
@@ -8,24 +9,41 @@ import { Run } from "../src/core/rules";
 afterEach(() => { vi.unstubAllGlobals(); vi.resetModules(); });
 
 describe("Orb collection", () => {
-  it("has unique ids, a free first orb and strictly rising costs", () => {
+  const progress = (crystals: number, level = 1, feats = {}) => ({ crystals, level, feats });
+  it("has unique ids, a free first orb and rising crystal costs", () => {
     expect(new Set(skins.map(s => s.id)).size).toBe(skins.length);
-    expect(skins[0]).toMatchObject({ id: "classic", cost: 0 });
-    skins.slice(1).forEach((skin, i) => expect(skin.cost).toBeGreaterThan(skins[i].cost));
+    expect(skins[0]).toMatchObject({ id: "classic", unlock: { kind: "crystals", cost: 0 } });
+    const costs = skins.filter(s => s.unlock.kind === "crystals").map(s => (s.unlock as { cost: number }).cost);
+    costs.slice(1).forEach((cost, i) => expect(cost).toBeGreaterThan(costs[i]));
     expect(getSkin("nope").id).toBe("classic");
   });
-  it("reports the next goal and every orb crossed by one run", () => {
+  it("keeps the costs players already reached before new orbs were added", () => {
+    const cost = (id: string) => (getSkin(id).unlock as { cost: number }).cost;
+    expect([cost("ember"), cost("frost"), cost("gold"), cost("galaxy"), cost("eclipse"), cost("prism")]).toEqual([8, 25, 50, 90, 150, 240]);
+  });
+  it("unlocks by crystals, player level or feat, and reports what one run crossed", () => {
     expect(nextSkin(0)?.id).toBe("ember");
-    expect(nextSkin(10)?.id).toBe("frost");
+    expect(nextSkin(10)?.id).toBe("neon");
     expect(nextSkin(10_000)).toBeUndefined();
-    expect(unlockedBetween(5, 60).map(s => s.id)).toEqual(["ember", "frost", "gold"]);
-    expect(unlockedBetween(60, 60)).toEqual([]);
-    expect(isUnlocked(getSkin("gold"), 49)).toBe(false);
-    expect(isUnlocked(getSkin("gold"), 50)).toBe(true);
+    expect(unlockedBetween(progress(5), progress(60)).map(s => s.id)).toEqual(["ember", "neon", "frost", "gold"]);
+    expect(isUnlocked(getSkin("chrome"), progress(0, 9))).toBe(false);
+    expect(isUnlocked(getSkin("chrome"), progress(0, 10))).toBe(true);
+    expect(isUnlocked(getSkin("legend"), progress(9999, 99))).toBe(false);
+    expect(isUnlocked(getSkin("legend"), progress(0, 1, { relics: true }))).toBe(true);
+    expect(unlockedBetween(progress(0), progress(0, 1, { nightmare: true })).map(s => s.id)).toEqual(["nightmare"]);
+  });
+  it("gives every orb a perk that only changes Infinito rules", () => {
+    for (const skin of skins) {
+      expect(skin.perk.length).toBeGreaterThan(10);
+      const perks = perksFor(skin);
+      expect(Object.keys(perks).sort()).toEqual(Object.keys(basePerks).sort());
+    }
+    expect(perksFor(getSkin("ember")).feverCombo).toBe(20);
+    expect(perksFor(getSkin("classic"))).toEqual(basePerks);
   });
   it("lets a first clean Fácil run unlock the first orb", () => {
     const crystals = createChart(getLevel("titi")).filter(n => n.crystal).length;
-    expect(crystals).toBeGreaterThanOrEqual(skins[1].cost);
+    expect(crystals).toBeGreaterThanOrEqual((skins[1].unlock as { cost: number }).cost);
   });
 });
 
@@ -77,13 +95,14 @@ describe("Saved progression", () => {
     expect(second.settings.skin).toBe("ember");
     expect(data.get("pulse-crystals-v1")).toBe("7");
   });
-  it("never equips an orb the balance has not reached", async () => {
+  it("never equips an orb the player has not unlocked", async () => {
     stubStorage(new Map([["pulse-settings-v1", JSON.stringify({ skin: "prism" })], ["pulse-crystals-v1", "12"]]));
     const storage = await import("../src/storage");
+    const profile = await import("../src/profile");
     expect(storage.settings.skin).toBe("prism");
-    expect(storage.activeSkin().id).toBe("classic");
+    expect(profile.activeSkin().id).toBe("classic");
     storage.addCrystals(300);
-    expect(storage.activeSkin().id).toBe("prism");
+    expect(profile.activeSkin().id).toBe("prism");
   });
   it("ignores corrupt progression values", async () => {
     stubStorage(new Map([["pulse-crystals-v1", "\"lots\""], ["pulse-best-landing-v2-titi", "250"], ["pulse-stars-landing-v2-titi", "-1"]]));

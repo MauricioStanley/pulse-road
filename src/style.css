@@ -431,13 +431,13 @@
   #song-time { flex-shrink: 0; }
   .home-heading {
     position: absolute;
-    top: 13%;
+    top: 10%;
     left: 0;
     right: 0;
     text-align: center;
   }
   .home-heading h1 {
-    font-size: clamp(56px, 10vh, 88px);
+    font-size: clamp(52px, 8.6vh, 88px);
     font-weight: 850;
     line-height: 0.88;
     letter-spacing: -0.035em;
@@ -722,6 +722,7 @@
   .hud-combo small {
     font-size: 9px;
     letter-spacing: 1px;
+    white-space: nowrap;
   }
   .energy {
     grid-column: 1/-1;
@@ -1637,6 +1638,627 @@
   .skin-option.locked strong {
     color: var(--muted);
   }
+  /* ---- Meta-game: level chip, modes, missions, relics ---- */
+  .utilities {
+    align-items: center;
+  }
+  .level-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+    min-width: 52px;
+    min-height: 34px;
+    padding: 5px 9px;
+    margin-right: 4px;
+    border-radius: 12px;
+    background: var(--canvas-overlay);
+    border: 1px solid var(--accent-soft);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text);
+    justify-content: center;
+  }
+  .level-chip i {
+    display: block;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--mint) calc(var(--p) * 100%), #ffffff22 0);
+  }
+  .level-chip:hover {
+    background: var(--panel);
+  }
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    background: var(--canvas-overlay);
+    border: 1px solid var(--line);
+  }
+  .mode-tabs button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 38px;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    pointer-events: auto;
+    transition: background 0.15s, color 0.15s;
+  }
+  .mode-tabs button svg {
+    width: 16px;
+    height: 16px;
+  }
+  .mode-tabs button[aria-selected="true"] {
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--accent-soft);
+  }
+  .mode-tabs button[aria-selected="true"] svg {
+    color: var(--mint);
+  }
+  .mode-panel {
+    min-height: 92px;
+  }
+  .mode-card {
+    margin-bottom: 12px;
+    padding: 11px 13px;
+    border-radius: 14px;
+    text-align: left;
+    background: var(--canvas-overlay);
+    border: 1px solid var(--line);
+  }
+  .mode-card-head {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .mode-card-head > svg {
+    width: 26px;
+    height: 26px;
+    color: var(--mint);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .mode-card-head strong {
+    display: block;
+    font-size: 16px;
+  }
+  .mode-card-head small {
+    display: block;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .mode-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 7px 0 0 36px;
+  }
+  .mode-meta .mode-stats,
+  .mode-meta .power-legend {
+    margin: 0;
+  }
+  .power-dot {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ffffff0d;
+    color: var(--chip);
+    border: 1px solid color-mix(in srgb, var(--chip) 55%, transparent);
+  }
+  .power-dot svg {
+    width: 13px;
+    height: 13px;
+  }
+  .power-dot.shield { --chip: #7fe3ff; }
+  .power-dot.heart { --chip: #ff7fb0; }
+  .power-dot.double { --chip: #ffd35c; }
+  .power-dot.slow { --chip: #b69cff; }
+  .mode-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 8px 0 0 36px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .mode-stats b {
+    color: var(--text);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .power-legend {
+    display: flex;
+    gap: 4px;
+  }
+  .power-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px 3px 5px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text);
+    background: #ffffff10;
+    border: 1px solid currentColor;
+    --chip: #7fe3ff;
+    border-color: color-mix(in srgb, var(--chip) 55%, transparent);
+  }
+  .power-chip svg {
+    width: 13px;
+    height: 13px;
+    color: var(--chip);
+  }
+  .power-chip.shield { --chip: #7fe3ff; }
+  .power-chip.heart { --chip: #ff7fb0; }
+  .power-chip.double { --chip: #ffd35c; }
+  .power-chip.slow { --chip: #b69cff; }
+  .power-chip.stand { --chip: #ffe3a3; }
+  .orb-perk {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    margin-top: 9px;
+    padding: 7px 9px;
+    border-radius: 11px;
+    background: #ffffff0a;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--muted);
+    pointer-events: auto;
+  }
+  .orb-perk b {
+    color: var(--text);
+  }
+  .orb-perk > svg {
+    width: 14px;
+    height: 14px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .orb-perk:hover {
+    background: #ffffff14;
+  }
+  .perk-orb,
+  .mini-orb {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+  }
+  .home-quick {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .home-quick .text-button {
+    font-size: 13px;
+    min-height: 40px;
+    padding: 8px;
+    color: #cee0de;
+  }
+  .home-quick .text-button svg {
+    width: 15px;
+    height: 15px;
+    color: var(--mint);
+  }
+  /* ---- In-run HUD additions ---- */
+  #ghost-delta {
+    margin-left: 6px;
+    letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  #ghost-delta.ahead {
+    color: var(--mint);
+  }
+  #ghost-delta.behind {
+    color: var(--coral);
+  }
+  .power-row {
+    grid-column: 1/-1;
+    display: flex;
+    gap: 6px;
+    min-height: 0;
+    margin-top: 8px;
+  }
+  .power-row:empty {
+    display: none;
+  }
+  .power-row .power-chip {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .touch-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .touch-guide {
+    position: absolute;
+    z-index: 2;
+    left: 20px;
+    right: 20px;
+    bottom: max(62px, calc(env(safe-area-inset-bottom) + 42px));
+    height: 64px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+    pointer-events: none;
+  }
+  .touch-guide span {
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    border: 1px dashed #ffffff22;
+    color: #ffffff55;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .touch-guide span.hint {
+    border: 2px solid var(--mint);
+    color: var(--mint);
+    background: var(--accent-glow);
+  }
+  .touch-guide.swipe {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .touch-guide.swipe span {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 0 22px;
+    border-radius: 999px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    height: 44px;
+    align-self: end;
+  }
+  .feedback.shield {
+    color: #7fe3ff;
+  }
+  .motivation.stage {
+    font-size: 40px;
+    font-weight: 850;
+    letter-spacing: 1px;
+    color: var(--text);
+    text-shadow: 0 0 26px var(--accent-soft), 0 2px 8px var(--canvas);
+  }
+  .motivation.relic {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffd35c;
+    text-shadow: 0 0 22px #ffd35c88, 0 2px 8px var(--canvas);
+  }
+  .motivation.power {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #eaf6ef;
+  }
+  /* ---- Results: rewards ---- */
+  .run-percent.stage {
+    flex-direction: column;
+    align-items: center;
+  }
+  .run-percent .unit {
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin: 0 0 2px;
+    font-weight: 700;
+  }
+  .rewards {
+    width: calc(100% - 36px);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: #ffffff0a;
+    border: 1px solid var(--line);
+    text-align: left;
+  }
+  .reward-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .reward-row > svg {
+    width: 15px;
+    height: 15px;
+    color: var(--mint);
+    flex-shrink: 0;
+  }
+  .reward-row b {
+    color: var(--text);
+  }
+  .reward-row .bank-track {
+    flex-basis: 100%;
+  }
+  .reward-row.gold,
+  .reward-row.gold b,
+  .reward-row.gold svg {
+    color: #ffe8a2;
+  }
+  .reward-row.relic,
+  .reward-row.relic svg {
+    color: #ffd35c;
+  }
+  .reward-row.muted {
+    font-size: 11.5px;
+  }
+  .mini-orb {
+    width: 16px;
+    height: 16px;
+  }
+  .rewards .unlock {
+    width: 100%;
+    margin: 2px 0 0;
+  }
+  .results-actions {
+    position: sticky;
+    bottom: -12px;
+    width: 100%;
+    padding: 10px 0 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(transparent, var(--canvas) 26%);
+  }
+  .results-actions .primary {
+    width: calc(100% - 36px);
+  }
+  /* ---- Dialogs ---- */
+  dialog.wide {
+    max-width: 460px;
+  }
+  .control-picker {
+    border: 0;
+    padding: 0;
+    margin: 0 0 10px;
+    display: grid;
+    gap: 6px;
+  }
+  .control-picker legend {
+    font-size: 16px;
+    font-weight: 550;
+    margin-bottom: 10px;
+  }
+  .control-option {
+    position: relative;
+    cursor: pointer;
+  }
+  .control-option input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .control-choice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 13px;
+    border: 1px solid #ffffff30;
+    background: var(--panel);
+  }
+  .control-choice > svg {
+    color: var(--mint);
+    flex-shrink: 0;
+  }
+  .control-choice strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .control-choice small {
+    display: block;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--muted);
+  }
+  .control-option input:checked + .control-choice {
+    border: 2px solid var(--mint);
+  }
+  .control-option input:focus-visible + .control-choice {
+    outline: 2px solid var(--mint);
+    outline-offset: 3px;
+  }
+  .perk-note {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .perk-note svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--mint);
+  }
+  .skin-choice small.perk {
+    color: var(--text);
+    opacity: 0.85;
+  }
+  .skin-choice small.unlock-label {
+    font-size: 10.5px;
+  }
+  .skin-option.locked small.perk {
+    opacity: 0.55;
+  }
+  .level-card {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: var(--panel);
+    margin-bottom: 4px;
+  }
+  .level-card > div:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .level-card small {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .level-badge {
+    position: relative;
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    color: var(--mint);
+  }
+  .level-badge svg {
+    position: absolute;
+    inset: 0;
+    width: 54px;
+    height: 54px;
+  }
+  .level-badge strong {
+    font-size: 17px;
+    color: var(--text);
+    margin-top: -3px;
+  }
+  .mission-list,
+  .relic-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .mission-list li {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 12px;
+    border-radius: 13px;
+    background: var(--panel);
+  }
+  .mission-list li > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .mission-list strong {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .mission-list small {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .mission-reward {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 700;
+    color: var(--mint);
+    font-size: 14px;
+  }
+  .mission-reward svg {
+    width: 14px;
+    height: 14px;
+  }
+  .relic-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .relic-progress .bank-track {
+    flex: 1;
+  }
+  .relic-progress .bank-track span {
+    background: #ffd35c;
+  }
+  .relic-progress small {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .relic-grid li {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 13px;
+    background: var(--panel);
+  }
+  .relic-grid li > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .relic-grid strong {
+    font-size: 14px;
+  }
+  .relic-grid small {
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--muted);
+  }
+  .relic-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff44;
+    background: #ffffff08;
+    border: 1px dashed #ffffff26;
+  }
+  .relic-grid li.found .relic-icon {
+    color: #ffd35c;
+    background: #ffd35c14;
+    border: 1px solid #ffd35c66;
+    box-shadow: 0 0 16px #ffd35c22;
+  }
+  .relic-grid li.found strong {
+    color: #ffe8a2;
+  }
+  .relic-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  .tutorial-guide {
+    z-index: 4;
+  }
   .reduced * {
     transition: none !important;
     animation: none !important;
@@ -1677,10 +2299,10 @@
       box-shadow: none;
     }
     .home-heading {
-      top: 13%;
+      top: 9%;
     }
     .home-heading h1 {
-      font-size: clamp(62px, 11.8vh, 98px);
+      font-size: clamp(54px, 8.8vh, 92px);
     }
     .home-bottom {
       bottom: max(14px, env(safe-area-inset-bottom));
@@ -1699,7 +2321,19 @@
       top: var(--hud-top);
     }
   }
+  @media (max-height: 780px) {
+    .offline-label { display: none; }
+  }
   @media (max-height: 720px) {
+    .mode-tabs { margin-bottom: 7px; }
+    .mode-tabs button { min-height: 34px; }
+    .mode-card { padding: 8px 11px; margin-bottom: 8px; }
+    .mode-card-head small { font-size: 11px; }
+    .mode-panel { min-height: 0; }
+    .orb-perk { margin-top: 6px; padding: 5px 8px; }
+    .home-quick { margin-top: 0; }
+    .home-quick .text-button { min-height: 36px; padding: 6px; }
+    .touch-guide { height: 54px; bottom: max(53px, calc(env(safe-area-inset-bottom) + 36px)); }
     .level-picker { margin-bottom: 8px; }
     .level-picker legend { display: none; }
     .level-choice { min-height: 56px; gap: 3px; }
@@ -1709,9 +2343,9 @@
     .run-percent strong { font-size: 38px; }
     .crystal-bank, .unlock { margin-bottom: 10px; padding: 8px 12px; }
     .results-panel .result-symbol { display: none; }
-    .home-heading { top: 12%; }
+    .home-heading { top: max(8%, 64px); }
     .home-heading h1 {
-      font-size: 65px;
+      font-size: 54px;
     }
     .home-heading p {
       margin-top: 12px;
@@ -1768,10 +2402,17 @@
       font-size: 13px;
     }
   }
+  @media (max-width: 400px) {
+    .mode-tabs button { white-space: nowrap; font-size: 12.5px; }
+    .mode-tabs button svg { display: none; }
+  }
   @media (max-width: 350px) {
     .home-heading h1 {
       font-size: 63px;
     }
+    .mode-tabs button { font-size: 11.5px; }
+    .home-quick .text-button { font-size: 12px; }
+    .level-chip { min-width: 44px; padding: 5px 7px; }
     .level-options {
       gap: 4px;
     }

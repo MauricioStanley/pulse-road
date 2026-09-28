@@ -2,7 +2,7 @@
 
 [Jugar ahora](https://mauriciostanley.github.io/pulse-road/) · [Modo ultraligero](https://mauriciostanley.github.io/pulse-road/lite.html) · [QR para compartir](qr/pulse-road.png)
 
-Juego de ritmo móvil de 80 segundos. Escanea una URL publicada, toca uno de tres carriles y supera tu récord. No utiliza cuentas, anuncios ni servicios de pago durante la partida.
+Juego de ritmo móvil: cuatro canciones de 80 segundos, un modo Infinito que acelera sin final y un reto diario igual para todos. Escanea una URL publicada, elige uno de tres carriles y supera tu récord. No utiliza cuentas, anuncios ni servicios de pago durante la partida.
 
 ## Iniciar en la computadora
 
@@ -35,18 +35,37 @@ Elige la dificultad en la portada. Todas duran 80 segundos y tienen música orig
 
 Pesadilla tiene 401 plataformas, ráfagas de hasta 6 por segundo y patrones fijos con pequeños descansos. Está pensado para aprender mediante muchos intentos; no existe una cantidad garantizada de intentos para dominarlo. Los récords e intentos se guardan por dificultad. Los récords de la versión anterior se conservan en su antigua clave, pero no se mezclan con estas reglas nuevas.
 
+## Modos
+
+- **Canciones.** Las cuatro dificultades de 80 segundos, con estrellas, mejor marca y récord por nivel.
+- **Infinito.** First Light en bucle, con etapas de 16 segundos. Cada etapa la canción acelera un 5 % (hasta ×1,6), las plataformas llegan antes, el daño sube y la recuperación baja. El recorrido se genera al azar con una semilla, siempre alineado con el pulso, sin plataformas simultáneas y sin saltos de un extremo al otro en corcheas antes de la etapa 5. En Infinito la Fiebre multiplica los puntos ×1,5.
+- **Reto diario.** Un Infinito cuyo recorrido depende de la fecha: todos los que juegan el mismo día reciben la misma pista. Guarda el mejor resultado del día.
+
+### Potenciadores (Infinito y reto diario)
+
+Flotan sobre algunas plataformas; se recogen al aterrizar (Perfecto o Bien).
+
+- **Escudo:** absorbe un fallo sin daño y sin romper el combo. La esfera muestra un anillo por carga.
+- **Corazón:** +35 de energía.
+- **Puntos dobles:** ×2 durante 8 segundos de canción.
+- **Cámara lenta:** la canción baja al 80 % de velocidad durante 8 segundos.
+
 ## Controles y reglas
 
 - Toca izquierda, centro o derecha **antes** de que llegue la plataforma. El movimiento es inmediato y la puntuación llega al aterrizar.
 - Puedes permanecer en un carril para varias plataformas seguidas. Salirte antes de aterrizar no cuenta como acierto.
 - Perfecto: ya estabas en el carril al aterrizar. Bien: llegaste dentro del pequeño margen tardío. La transición visual tiene 45 ms de asentamiento.
 - Margen tardío por nivel: Fácil 200 ms; Medio 140 ms; Difícil 100 ms; Pesadilla 65 ms. No hay penalización por seleccionar anticipadamente el siguiente carril después del aterrizaje anterior.
+- En **Ajustes → Controles** eliges cómo mover la esfera:
+  - **Botones:** tres botones abajo (predeterminado).
+  - **Arrastrar:** la pantalla se divide en tres columnas invisibles; tocar o arrastrar el dedo lleva la esfera a esa columna.
+  - **Deslizar:** cada 24 px de deslizamiento horizontal cambia un carril; un deslizamiento largo cruza dos. Tocar sin deslizar no mueve la esfera.
 - En computadora: flechas izquierda, abajo y derecha; A, S y D. Escape pausa. En resultados, R vuelve a jugar.
 - Empiezas con 100 de energía. Daño y recuperación dependen del nivel.
 - Multiplicador ×2 con 10 aciertos, ×3 con 20 y ×4 con 30. Perfecto: 100 puntos × multiplicador; Bien: 60 × multiplicador.
 - Los cristales requieren un Perfecto y añaden 25 puntos. También se suman a tu colección (ver abajo).
 - Completar da una estrella; 75 % de precisión da dos y 90 % da tres. La precisión se mide sobre las plataformas alcanzadas: al completar la canción equivale a todas.
-- El tutorial enseña el nuevo aterrizaje sin daño; se repite desde Ajustes.
+- El tutorial enseña el aterrizaje sin daño y adapta sus textos al control elegido; se repite desde la portada o Ajustes.
 
 Cada Perfecto emite brillo y partículas; con efectos reducidos queda un anillo sencillo. Cada fallo emite un breve sonido de daño original, salvo al silenciar. Aparecen mensajes de ánimo al alcanzar hitos de puntuación y frases aleatorias al perder, sin repetir consecutivamente.
 
@@ -59,19 +78,44 @@ Cada Perfecto emite brillo y partículas; con efectos reducidos queda un anillo 
 - **Tensión.** Con 40 de energía o menos, los bordes de la pantalla laten en rojo al ritmo.
 - **Caída.** Al perder, la música frena como un disco, el mundo sigue a cámara lenta y la esfera se rompe en pedazos antes de mostrar los resultados.
 - **Récord en vivo.** Durante la partida se anuncia el momento en que superas tu récord de puntos o tu mejor marca de recorrido. La barra superior muestra tu mejor marca.
+- **Lectura.** La siguiente plataforma en la que aterrizarás lleva un contorno que late con el ritmo.
+- **Cámara y esfera.** La cámara se inclina al cambiar de carril y respira con el bombo; la esfera se estira en los cambios rápidos y deja una estela. Cada esfera suelta sus propias partículas (brasas, nieve, estrellas, burbujas o chispas).
+- **Infinito.** Cada etapa nueva cambia el color del escenario, con un destello y la etapa anunciada en grande.
 
-Con efectos reducidos no hay pulso, torres animadas, sacudidas, aplastamiento, fragmentos, destellos ni animaciones de resultados.
+Con efectos reducidos no hay pulso, torres animadas, sacudidas, inclinación de cámara, aplastamiento, partículas, fragmentos, destellos ni animaciones de resultados.
 
 ## Progreso y colección
 
 - **Mejor marca.** Al perder ves qué porcentaje de la canción recorriste y tu mejor marca anterior. Solo una canción completa cuenta como 100 %.
 - **Tarjetas de dificultad.** La portada muestra las estrellas y la mejor marca de cada nivel.
-- **Esferas.** Los cristales conseguidos se acumulan para siempre y nunca se gastan. Al alcanzar cada cifra se desbloquea una esfera: Brasa (8), Escarcha (25), Oro (50), Galaxia (90), Eclipse (150) y Prisma (240). Una partida perfecta de Fácil da 10 cristales. Elige la esfera en el botón **Esferas** de la portada; la esfera Pulso sigue el color del juego.
-- **Compartir.** Los resultados ofrecen compartir la puntuación con el menú del teléfono o, si no existe, copiarla con el enlace del juego.
+- **Esferas (14).** Los cristales se acumulan para siempre y nunca se gastan: al alcanzar la cifra, la esfera es tuya. Por cristales: Brasa (8), Neón (15), Escarcha (25), Oro (50), Océano (70), Galaxia (90), Lava (120), Eclipse (150) y Prisma (240). Cromo llega en el nivel 10; Pesadilla al completar Pesadilla; Infinito al llegar a la etapa 10; Leyenda al encontrar todas las reliquias. Pulso sigue el color del juego. Una partida perfecta de Fácil da 10 cristales.
+- **Habilidades.** Cada esfera tiene una habilidad que solo actúa en Infinito y en el reto diario; en las canciones todas puntúan igual, así los récords son comparables:
 
-La mejor marca, las estrellas y los cristales se guardan en claves nuevas del navegador; los récords e intentos existentes no cambian. El modo ultraligero también suma cristales, mejor marca y estrellas.
+  | Esfera | Habilidad |
+  | --- | --- |
+  | Pulso | Ninguna |
+  | Brasa | La Fiebre llega con 20 de combo |
+  | Neón | +50 % de recuperación de energía |
+  | Escarcha | Empieza con un escudo |
+  | Oro | Cristales ×2 |
+  | Océano | La velocidad sube más despacio (+3,5 % por etapa) |
+  | Galaxia | Potenciadores +50 % de duración |
+  | Lava | −25 % de daño |
+  | Eclipse | Sobrevive una vez a la caída, con 25 de energía |
+  | Prisma | El doble de potenciadores |
+  | Cromo | Los cristales también cuentan con un Bien |
+  | Pesadilla | Puntos ×1,25 y daño +25 % |
+  | Infinito | Empieza con puntos dobles |
+  | Leyenda | Un escudo nuevo en cada etapa |
 
-Todos los recorridos contienen guiños decorativos originales: anillos dorados, cajas de bonus, bloques de césped y portales. Están fuera de los carriles, no son obstáculos ni coleccionables. No utilizan personajes, logotipos ni audio de otros videojuegos.
+- **Reliquias del ritmo (10).** Objetos musicales originales —metrónomo, casete, diapasón, vinilo, audífonos, piano de juguete, corchea dorada, altavoz, batuta y corazón de cuarzo— escondidos en plataformas fijas: dos en cada canción y dos en Infinito (etapas 5 y 9). Brillan en dorado, con una columna de luz; se guardan con un Perfecto y dan 10 cristales. El botón **Reliquias** muestra las encontradas, su historia y pistas de las que faltan. No cambian la puntuación.
+- **Nivel y misiones.** Cada partida da experiencia, incluso al perder; subir de nivel da cristales. Siempre hay tres misiones activas (por ejemplo, «Llega a la etapa 6 en Infinito» o «Completa Medio»); al cumplir una se cobran sus cristales y llega la siguiente. Se ven en el botón **Misiones** o tocando el nivel de la barra superior.
+- **Fantasma.** Al batir el récord de una canción se guarda esa partida. En la siguiente, una esfera translúcida repite tus movimientos y junto a los puntos ves si vas por delante o por detrás del récord. Se desactiva en Ajustes.
+- **Compartir.** Los resultados ofrecen compartir la puntuación, la etapa o el reto del día con el menú del teléfono o, si no existe, copiarla con el enlace del juego.
+
+La mejor marca, las estrellas, los cristales, el perfil (nivel, misiones, reliquias, hazañas y mejores de Infinito) y los fantasmas se guardan en claves propias del navegador; los récords e intentos existentes no cambian. El modo ultraligero también suma cristales, mejor marca y estrellas, pero no incluye Infinito, reto diario, reliquias ni fantasma.
+
+Los antiguos guiños decorativos de la pista se retiraron: las reliquias los sustituyen con objetos propios del juego que además sirven para algo.
 
 ## Repositorio público y publicación
 
@@ -95,7 +139,7 @@ Referencias oficiales: [Vite en GitHub Pages](https://vite.dev/guide/static-depl
 
 ## Instalar y jugar sin conexión
 
-La primera visita requiere internet. Espera a ver **Disponible sin conexión** antes de desconectarte. Se guardan la interfaz, tipografía, motor, iconos y las cuatro canciones completas. La caché inicial ocupa aproximadamente 5,7 MiB (unos 6 MB); después no se necesita conexión durante las partidas.
+La primera visita requiere internet. Espera a ver **Disponible sin conexión** antes de desconectarte. Se guardan la interfaz, tipografía, motor, iconos y las cuatro canciones completas; Infinito y el reto diario usan First Light, que ya está incluida. La caché inicial ocupa aproximadamente 5,7 MiB (unos 6 MB); después no se necesita conexión durante las partidas.
 
 En Android, el botón de instalación abre el aviso cuando el navegador lo permite. En iPhone muestra los pasos de Safari: Compartir → Añadir a pantalla de inicio. La disponibilidad de instalación, vibración y bloqueo de orientación depende del navegador.
 
@@ -107,7 +151,7 @@ Un navegador puede eliminar su caché por limpieza o falta de espacio. Los réco
 
 En **Ajustes → Color del juego** elige Menta, Morado, Rojo o Verde. Cambian la esfera, pista y controles; la elección se guarda en ese navegador. En rojo, los peligros usan ámbar para distinguirlos del jugador; también conservan sus pinchos y marcas.
 
-Sonido, vibración compatible, efectos reducidos y desfase de −200 a +200 ms. Un desfase positivo retrasa la pista y la evaluación del toque para compensar una salida de audio tardía. Los auriculares Bluetooth pueden necesitar ajuste.
+Controles (botones, arrastrar o deslizar), fantasma del récord, sonido, vibración compatible, efectos reducidos y desfase de −200 a +200 ms. Un desfase positivo retrasa la pista y la evaluación del toque para compensar una salida de audio tardía. Los auriculares Bluetooth pueden necesitar ajuste.
 
 ## Celulares lentos: modo ultraligero
 
@@ -126,15 +170,19 @@ No se garantiza rendimiento ni compatibilidad en el Samsung S3 Mini físico: un 
 
 ## Estructura
 
-- `src/core/`: recorrido, puntuación y reglas independientes de gráficos.
+- `src/core/`: recorrido, puntuación y reglas independientes de gráficos: canciones (`chart.ts`, `rules.ts`), Infinito y reto diario (`endless.ts`), reliquias (`relics.ts`), misiones y nivel (`missions.ts`) y fantasma (`ghost.ts`).
 - `src/entry.ts`: arranque ligero que recuerda el modo, sin cargar Phaser cuando no hace falta.
 - `src/lite/`: reproductor de bajo consumo y renderizador Canvas 2D, con las reglas compartidas.
 - `public/lite.html` y `public/lite.css`: interfaz clásica para dispositivos antiguos.
 - `scripts/build-lite.mjs`: genera `public/lite.js`, verifica ES5, ausencia de dependencias de ejecución y presupuesto de 50 KB. Se ejecuta al probar, compilar o iniciar desarrollo.
 - `src/audio/conductor.ts`: carga, reproducción, reloj, pausa y efectos.
 - `src/game/RoadScene.ts`: pista 2D con perspectiva y esfera.
-- `src/main.ts`: pantallas, controles y ciclo de vida.
-- `src/storage.ts`: ajustes y récord local con recuperación ante errores de almacenamiento.
+- `src/main.ts`: pantallas, modos, controles y ciclo de vida.
+- `src/input/touch.ts`: controles táctiles de arrastre y deslizamiento.
+- `src/ui/icons.ts`: iconos SVG, incluidos potenciadores y reliquias.
+- `src/skins.ts`: las 14 esferas, cómo se desbloquean y sus habilidades.
+- `src/storage.ts`: ajustes, récords, cristales y mejores marcas con recuperación ante errores de almacenamiento.
+- `src/profile.ts`: nivel, misiones, reliquias, hazañas, mejores de Infinito y fantasmas.
 - `src/style.css`: diseño adaptable y accesibilidad de la interfaz.
 - `scripts/generate-assets.mjs`: First Light e iconos originales.
 - `scripts/generate-tracks.mjs`: tres composiciones adicionales originales.
@@ -159,4 +207,4 @@ Revisar `qa/VERIFICACION.md`. La emulación de tamaños de pantalla no sustituye
 
 ## Recursos
 
-Las cuatro canciones, el sonido de daño, los guiños decorativos y la geometría del juego se crearon para este proyecto. Las dependencias conservan sus licencias originales. Consulta `docs/asset-licenses.md` y `licenses/`.
+Las cuatro canciones, los efectos de sonido, las reliquias, las esferas y la geometría del juego se crearon para este proyecto. Las dependencias conservan sus licencias originales. Consulta `docs/asset-licenses.md` y `licenses/`.
