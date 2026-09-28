@@ -102,7 +102,7 @@ El diálogo agrupa sonido, vibración, efectos reducidos y sincronización. El r
 
 ### Movimiento
 
-El toque produce pulso de carril, desplazamiento de esfera y, con efectos activos, salto y partículas acotadas. La opción reducida elimina partículas, salto/flotación, estela, destello coral y viaje decorativo del inicio. Conserva notas esenciales, cambio horizontal, pulso y pequeña oscilación del cristal. Desactiva transiciones CSS; no es un modo totalmente estático.
+El toque produce pulso de carril, desplazamiento de esfera y, con efectos activos, salto y partículas acotadas. Con efectos activos, el mundo pulsa con el bombo de la canción (bordes, cuadrícula, horizonte, torres laterales), la esfera se aplasta al aterrizar y la plataforma se hunde con un anillo; la Fiebre (combo 30) tiñe la pista y añade líneas de velocidad; al perder, la esfera se fragmenta. La opción reducida elimina partículas, salto/flotación, estela, destello coral, pulso con el ritmo, torres animadas, sacudida, aplastamiento, fragmentos, destellos de Fiebre, animaciones CSS y viaje decorativo del inicio. Conserva notas esenciales, cambio horizontal, pulso y pequeña oscilación del cristal. Desactiva transiciones CSS; no es un modo totalmente estático.
 
 La selección de carril pertenece al toque, no al resultado de puntuación. El movimiento comienza en el siguiente fotograma incluso fuera de la ventana de acierto; una nota expirada no cambia de carril ni genera un salto tardío. El estado pulsado del control se aplica sin transición de entrada.
 

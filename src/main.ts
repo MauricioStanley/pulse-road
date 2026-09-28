@@ -10,12 +10,14 @@ import {
   type Lane,
   type Note,
 } from "./core/chart";
-import { getLevel, levels, levelLabel } from "./core/levels";
+import { getLevel, levels } from "./core/levels";
 import { encouragements, lossMessages, nextMessage } from "./core/messages";
 import { Run, type Hit } from "./core/rules";
+import { progressPercent } from "./core/progress";
 import { Conductor } from "./audio/conductor";
 import { RoadScene } from "./game/RoadScene";
 import { themes, getTheme, themeVariables } from "./themes";
+import { skins, getSkin, isUnlocked, nextSkin, unlockedBetween } from "./skins";
 import { assetUrl } from "./paths";
 import {
   settings,
@@ -25,6 +27,13 @@ import {
   getAttempts,
   startAttempt,
   storageAvailable,
+  getBestProgress,
+  saveProgress,
+  getStars,
+  saveStars,
+  getCrystals,
+  addCrystals,
+  activeSkin,
 } from "./storage";
 
 const paths: Record<string, string> = {
@@ -51,6 +60,8 @@ const paths: Record<string, string> = {
   headphones:
     '<path d="M4 14v-3a8 8 0 0 1 16 0v3M4 12H2v7h5v-7Zm16 0h2v7h-5v-7Z"/>',
   home: '<path d="m3 11 9-8 9 8v10h-6v-7H9v7H3Z"/>',
+  share: '<path d="M12 15V3m-5 5 5-5 5 5M5 13v7h14v-7"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
 };
 const icon = (name: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.play}</svg>`;
@@ -62,7 +73,7 @@ app.innerHTML = `
   <main class="cabinet" aria-label="Pulse Road, juego de ritmo">
     <div id="game" aria-hidden="true"></div>
     <header class="topbar"><a class="wordmark" href="#" aria-label="Pulse Road, inicio">${icon("bolt")}<span>pulse<span class="wordmark-light">road</span></span></a><div class="utilities"><button class="icon-button" id="sound-button" aria-label="Silenciar sonido">${icon("sound")}</button><button class="icon-button" id="settings-button" aria-label="Ajustes">${icon("settings")}</button></div></header>
-    <section id="hud" class="hud" hidden><div class="hud-score"><small>PUNTOS</small><strong id="score">0</strong></div><div class="hud-combo"><strong id="combo">×1</strong><small id="combo-label">MULTIPLICADOR</small></div><button class="icon-button" id="pause-button" aria-label="Pausar partida">${icon("pause")}</button><div class="energy"><span id="energy-fill"></span></div><div class="song-progress"><span id="progress-fill"></span></div></section>
+    <section id="hud" class="hud" hidden><div class="hud-score"><small>PUNTOS</small><strong id="score">0</strong></div><div class="hud-combo"><strong id="combo">×1</strong><small id="combo-label">MULTIPLICADOR</small></div><button class="icon-button" id="pause-button" aria-label="Pausar partida">${icon("pause")}</button><div class="energy"><span id="energy-fill"></span></div><div class="song-progress"><span id="progress-fill"></span><i id="best-marker" title="Tu mejor marca" hidden></i></div></section>
     <div id="phase" class="phase" hidden></div>
     <div id="motivation" class="motivation" role="status"></div>
     <div id="feedback" class="feedback" aria-live="off"></div>
@@ -92,6 +103,7 @@ type Mode =
   | "countdown"
   | "playing"
   | "paused"
+  | "dying"
   | "results";
 let mode: Mode = "home";
 let level = getLevel(settings.difficulty);
@@ -101,6 +113,15 @@ let nextMilestone = 1000;
 let motivationUntil = 0;
 let lastEncouragement = "";
 let lastLoss = "";
+let keyboardPlay = false;
+// Once-per-run moments, measured against the bests from before this attempt.
+let recordAtStart = 0;
+let bestAtStart = 0;
+let passedRecord = false;
+let passedBest = false;
+let lastMultiplier = 1;
+let deathTime = 0;
+let deathAt = 0;
 let silentMode = false;
 let loadingGeneration = 0;
 let pauseMode: "playing" | "tutorial" = "playing";
@@ -156,18 +177,38 @@ function toast(message: string) {
     3400,
   );
 }
+/** Big center-top message. Later events replace earlier ones. */
+function announce(text: string, kind: "fever" | "record" | "combo" | "cheer", ms: number) {
+  const node = $("#motivation");
+  node.textContent = text;
+  node.className = "motivation";
+  void node.offsetWidth; // Restart the pop animation for repeated kinds.
+  node.className = `motivation visible ${kind}`;
+  motivationUntil = performance.now() + ms;
+}
+function bump(node: HTMLElement) {
+  node.classList.remove("bump");
+  void node.offsetWidth;
+  node.classList.add("bump");
+}
+function updateBestMarker() {
+  const best = getBestProgress(level.id), marker = $("#best-marker");
+  marker.hidden = !(best > 0 && best < 100);
+  marker.classList.remove("passed");
+  marker.style.left = `${best}%`;
+}
 function setMode(value: Mode) {
   mode = value;
   $(".cabinet").dataset.mode = value;
-  const active = ["playing", "tutorial", "countdown", "paused"].includes(value);
+  const active = ["playing", "tutorial", "countdown", "paused", "dying"].includes(value);
   hud.hidden = !active;
   $(".topbar").hidden = active;
-  laneControls.hidden = !["playing", "tutorial", "countdown"].includes(value);
+  laneControls.hidden = !["playing", "tutorial", "countdown", "dying"].includes(value);
   $("#song-label").hidden = !active;
-  $("#phase").hidden = !["playing", "countdown"].includes(value);
+  $("#phase").hidden = !["playing", "countdown", "dying"].includes(value);
   $("#tutorial-guide").hidden = value !== "tutorial";
   $("#countdown").hidden = value !== "countdown";
-  screen.hidden = ["playing", "tutorial", "countdown"].includes(value);
+  screen.hidden = ["playing", "tutorial", "countdown", "dying"].includes(value);
   $("#motivation").hidden = value !== "playing";
 }
 function syncSound() {
@@ -183,8 +224,13 @@ function cacheLabel() {
     ? `${icon("check")} Disponible sin conexión`
     : `${icon("headphones")} Mejor con sonido · También puedes jugar en silencio`;
 }
+const starRow = (earned: number) =>
+  `<span class="level-stars" aria-label="${earned} de 3 estrellas">${[1, 2, 3].map((x) => `<i class="${x <= earned ? "on" : ""}"></i>`).join("")}</span>`;
 function levelPicker() {
-  return `<div class="level-picker"><label for="difficulty">Elige tu dificultad</label><select id="difficulty" aria-label="Elige tu dificultad" aria-describedby="level-info">${levels.map(item => `<option value="${item.id}" ${item.id === level.id ? "selected" : ""}>${levelLabel(item)}</option>`).join("")}</select><p id="level-info">${level.track} · ${level.bpm} BPM${level.id === "servellon" ? " · 6 saltos/s" : ""}</p></div>`;
+  return `<fieldset class="level-picker"><legend>Elige tu dificultad</legend><div class="level-options">${levels.map((item) => {
+    const reached = getBestProgress(item.id);
+    return `<label class="level-option"><input type="radio" name="difficulty" value="${item.id}" aria-describedby="level-info" ${item.id === level.id ? "checked" : ""}/><span class="level-choice"><strong>${item.name}</strong>${starRow(getStars(item.id))}<small>${reached ? `${reached} %` : `${item.bpm} BPM`}</small></span></label>`;
+  }).join("")}</div><p id="level-info">${level.subtitle ? `${level.subtitle} · ` : ""}${level.track} · ${level.bpm} BPM${level.id === "servellon" ? " · 6 saltos/s" : ""}</p></fieldset>`;
 }
 function home() {
   loadingGeneration++;
@@ -194,20 +240,27 @@ function home() {
   feedback.textContent = "";
   feedback.className = "feedback";
   screen.innerHTML = `<div class="home-heading"><h1>PULSE<br/><span>ROAD</span></h1><p>Encuentra tu ritmo.</p></div>
-    <div class="home-bottom">${levelPicker()}<div class="record-line">${icon("trophy")}<span>RÉCORD · ${level.name.toLocaleUpperCase("es")}</span><strong>${fmt(getRecord())}</strong></div>
+    <div class="home-bottom">${levelPicker()}<div class="home-chips"><div class="record-line">${icon("trophy")}<span>RÉCORD</span><strong>${fmt(getRecord())}</strong></div><button class="crystal-chip" id="collection-button" aria-label="Esferas. Tienes ${getCrystals()} cristales">${icon("diamond")}<strong>${fmt(getCrystals())}</strong><span>Esferas</span></button></div>
     <button class="primary play-button" id="play-button">${icon("play")}<span>Jugar</span><span class="button-detail">80 s</span></button>
     <button class="text-button" id="tutorial-button">Primera vez aquí${icon("arrow")}</button>
     <div class="offline-label" id="offline-label">${cacheLabel()}</div>
     <div class="home-links"><button class="text-button" id="install-button">${icon("install")} Instalar juego</button><a class="text-button" href="${assetUrl("lite.html")}">Ultraligero</a><button class="text-button" id="credits-button">Créditos</button></div>
     ${updateAvailable ? '<button class="update-button" id="update-button">Hay una nueva versión. Actualizar</button>' : ""}</div>`;
-  $<HTMLSelectElement>("#difficulty").onchange = (event) => {
-    level = getLevel((event.target as HTMLSelectElement).value);
-    chart = createChart(level);
-    settings.difficulty = level.id;
-    saveSettings();
-    home();
-    $("#difficulty").focus({ preventScroll: true });
-  };
+  screen
+    .querySelectorAll<HTMLInputElement>('input[name="difficulty"]')
+    .forEach((input) => {
+      input.onchange = () => {
+        level = getLevel(input.value);
+        chart = createChart(level);
+        settings.difficulty = level.id;
+        saveSettings();
+        home();
+        screen
+          .querySelector<HTMLInputElement>('input[name="difficulty"]:checked')
+          ?.focus({ preventScroll: true });
+      };
+    });
+  $("#collection-button").onclick = collection;
   $("#play-button").onclick = () => void prepare(!settings.tutorial);
   $("#tutorial-button").onclick = () => void prepare(true);
   $("#install-button").onclick = () => void install();
@@ -254,9 +307,18 @@ async function prepare(withTutorial: boolean) {
 function beginRun() {
   lastSongSecond = -1;
   lastPhase = -1;
+  $("#phase").textContent = `${level.name.toLocaleUpperCase("es")} · ${phases[0]}`;
   audio.reset();
   run = new Run(chart, level);
   startAttempt(level.id);
+  recordAtStart = getRecord(level.id);
+  bestAtStart = getBestProgress(level.id);
+  passedRecord = false;
+  passedBest = false;
+  lastMultiplier = 1;
+  hud.classList.remove("fever");
+  audio.setKey(level.root, level.minor);
+  updateBestMarker();
   nextMilestone = 1000;
   motivationUntil = 0;
   $("#motivation").textContent = "";
@@ -273,10 +335,11 @@ function beginRun() {
     setMode("playing");
   });
 }
+const COUNT_STEP = 700;
 function countdown(action: () => void) {
   setMode("countdown");
   countAction = action;
-  countdownEnd = performance.now() + 3000;
+  countdownEnd = performance.now() + COUNT_STEP * 3;
   lastCount = -1;
   $("#countdown").innerHTML =
     "<strong>3</strong><span>Encuentra el pulso</span>";
@@ -338,13 +401,29 @@ function hitFeedback(hit: Hit) {
   feedback.innerHTML = `<strong>${text}</strong><span>${hit.crystal ? "+25 · CRISTAL" : hit.judgment === "miss" ? "VUELVE AL PULSO" : run.combo >= 2 ? `${run.combo} DE COMBO` : "SIGUE ASÍ"}</span>`;
   feedback.className = `feedback show ${hit.judgment}`;
   feedbackUntil = performance.now() + 520;
-  scene.hit(hit.note.lane, hit.judgment, settings.reduced);
-  audio.tick(hit.judgment);
-  if (hit.judgment !== "miss" && run.score >= nextMilestone && performance.now() > motivationUntil + 4500) {
+  scene.hit(hit.note.lane, hit.judgment, settings.reduced, hit.crystal);
+  if (hit.judgment === "miss") audio.tick("miss");
+  else audio.hit(hit.judgment, run.combo);
+  const multiplier = run.multiplier;
+  if (multiplier > lastMultiplier) {
+    bump($("#combo"));
+    if (multiplier === 4) {
+      hud.classList.add("fever");
+      announce("¡FIEBRE! ×4", "fever", 1900);
+      audio.rise(10);
+    } else {
+      announce(`COMBO ×${multiplier}`, "combo", 1000);
+      audio.rise(multiplier + 2);
+    }
+  } else if (multiplier < lastMultiplier) hud.classList.remove("fever");
+  lastMultiplier = multiplier;
+  if (hit.judgment !== "miss" && recordAtStart > 0 && !passedRecord && run.score > recordAtStart) {
+    passedRecord = true;
+    announce("¡NUEVO RÉCORD!", "record", 2100);
+    audio.fanfare();
+  } else if (hit.judgment !== "miss" && run.score >= nextMilestone && performance.now() > motivationUntil + 4500) {
     lastEncouragement = nextMessage(encouragements, lastEncouragement);
-    $("#motivation").textContent = lastEncouragement;
-    $("#motivation").classList.add("visible");
-    motivationUntil = performance.now() + 2300;
+    announce(lastEncouragement, "cheer", 2300);
     nextMilestone = run.score + 2500;
   }
   if (settings.vibration && typeof navigator.vibrate === "function")
@@ -369,7 +448,7 @@ function tap(lane: Lane) {
   const t = Math.max(0, audio.time - settings.offset / 1000);
   run.tap(lane, t).forEach(hitFeedback);
   updateHUD();
-  if (run.dead) finishRun(false);
+  if (run.dead) die();
 }
 function tutorialFeedback(hit: Hit) {
   if (hit.judgment === "miss") { makeTutorialNote(tutorialTime + 1.5); return; }
@@ -387,7 +466,7 @@ function updateHUD() {
   $("#score").textContent = fmt(run.score);
   $("#combo").textContent = `×${run.multiplier}`;
   $("#combo-label").textContent = run.combo
-    ? `${run.combo} DE COMBO`
+    ? `${run.multiplier === 4 ? "FIEBRE · " : ""}${run.combo} DE COMBO`
     : "MULTIPLICADOR";
   $("#energy-fill").style.transform = `scaleX(${run.energy / 100})`;
   $("#energy-fill").classList.toggle("low", run.energy <= 40);
@@ -397,18 +476,95 @@ function updateHUD() {
   $(".energy").setAttribute("aria-valuemax", "100");
   $(".energy").setAttribute("aria-valuenow", String(run.energy));
 }
+function die() {
+  if (mode !== "playing") return;
+  deathTime = Math.max(0, audio.time - settings.offset / 1000);
+  deathAt = performance.now();
+  setMode("dying");
+  hud.classList.remove("fever");
+  audio.tapeStop();
+  scene.shatter(settings.reduced);
+  if (settings.vibration && typeof navigator.vibrate === "function")
+    navigator.vibrate([40, 50, 90]);
+  const generation = loadingGeneration;
+  window.setTimeout(() => {
+    if (mode === "dying" && generation === loadingGeneration) finishRun(false);
+  }, settings.reduced ? 450 : 1150);
+}
+function shareText(completed: boolean, percent: number) {
+  const stars = "★".repeat(run.stars);
+  return completed
+    ? `Completé ${level.name} en Pulse Road con ${fmt(run.score)} puntos ${stars}. ¿Me superas?`
+    : `Llegué al ${percent} % de ${level.name} en Pulse Road con ${fmt(run.score)} puntos. ¿Me superas?`;
+}
+async function share(text: string) {
+  const url = new URL(assetUrl(""), location.href).href;
+  try {
+    if (typeof navigator.share === "function") {
+      await navigator.share({ title: "Pulse Road", text, url });
+      return;
+    }
+    await navigator.clipboard.writeText(`${text} ${url}`);
+    toast("Copiado. Pégalo donde quieras.");
+  } catch (error) {
+    if ((error as DOMException)?.name !== "AbortError")
+      toast("Este navegador no permite compartir desde aquí.");
+  }
+}
+function countUp(node: HTMLElement, value: number) {
+  if (settings.reduced || value <= 0) return;
+  const start = performance.now(), duration = 850;
+  const step = () => {
+    if (!node.isConnected) return;
+    const k = Math.min(1, (performance.now() - start) / duration);
+    node.textContent = fmt(Math.round(value * (1 - (1 - k) ** 3)));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  node.textContent = "0";
+  requestAnimationFrame(step);
+}
 function finishRun(completed: boolean) {
   if (mode === "results") return;
   audio.pause();
   run.finished = completed;
+  const percent = progressPercent(completed ? DURATION : deathTime, DURATION, completed);
+  const previousBest = getBestProgress(level.id);
+  const improved = saveProgress(percent, level.id);
   const record = saveRecord(run.score, level.id);
+  saveStars(run.stars, level.id);
+  const before = getCrystals();
+  const total = addCrystals(run.crystals);
+  const unlocked = unlockedBetween(before, total).pop();
+  const next = nextSkin(total);
   if (!completed) lastLoss = nextMessage(lossMessages, lastLoss);
   setMode("results");
   feedback.textContent = "";
   const stars = run.stars;
-  screen.innerHTML = `<div class="results-panel"><div class="result-symbol">${icon(completed ? "trophy" : "replay")}</div><h2>${completed ? "¡Camino completo!" : lastLoss}</h2><p>${level.name} · Intento ${getAttempts(level.id)}<br/>${completed ? "Ese ritmo ya es tuyo." : "Adelántate al siguiente aterrizaje."}</p><div class="result-stars" aria-label="${stars} de 3 estrellas">${[1, 2, 3].map((x) => `<span class="${x <= stars ? "earned" : ""}">${icon("star")}</span>`).join("")}</div><div class="final-score">${fmt(run.score)}</div><div class="record-status">${record ? `${icon("trophy")} NUEVO RÉCORD` : `RÉCORD PERSONAL · ${fmt(getRecord())}`}</div><div class="result-stats"><div><strong>${run.accuracy}%</strong><span>Precisión</span></div><div><strong>${run.maxCombo}</strong><span>Combo máx.</span></div><div><strong>${run.crystals}</strong><span>Cristales</span></div></div><div class="judgment-summary"><span><i class="perfect-dot"></i>${run.perfect} perfectos</span><span>${run.good} buenos</span><span>${run.misses} fallos</span></div><button class="primary" id="replay-button">${icon("replay")}Volver a jugar</button><button class="text-button" id="back-home">Volver al inicio</button>${!storageAvailable ? '<p class="storage-note">El navegador no permite guardar tu récord.</p>' : ""}</div>`;
+  const headline = completed
+    ? `<div class="result-stars" aria-label="${stars} de 3 estrellas">${[1, 2, 3].map((x) => `<span class="${x <= stars ? "earned" : ""}">${icon("star")}</span>`).join("")}</div>`
+    : `<div class="run-progress"><div class="run-percent"><strong>${percent}</strong><span>%</span></div><div class="progress-meter" role="progressbar" aria-label="Camino recorrido" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><span style="transform:scaleX(${percent / 100})"></span>${previousBest > 0 && previousBest < 100 ? `<i style="left:${previousBest}%" title="Mejor marca anterior"></i>` : ""}</div><small class="${improved ? "improved" : ""}">${improved && previousBest > 0 ? "¡Nueva mejor marca!" : improved ? "Tu primera marca en este nivel" : `Tu mejor marca: ${previousBest} %`}</small></div>`;
+  const bank = unlocked
+    ? `<div class="unlock"><span class="unlock-orb" style="background:${unlocked.preview}"></span><div><strong>¡Nueva esfera: ${unlocked.name}!</strong><small>${unlocked.description}</small></div><button class="secondary" id="equip-button">Usar</button></div>`
+    : `<div class="crystal-bank"><span>${icon("diamond")}<strong>+${run.crystals}</strong>· ${fmt(total)} en total</span>${next ? `<div class="bank-track"><span style="transform:scaleX(${Math.min(1, total / next.cost)})"></span></div><small>Faltan ${next.cost - total} para ${next.name}</small>` : "<small>Tienes todas las esferas.</small>"}</div>`;
+  const canShare = typeof navigator.share === "function" || !!navigator.clipboard?.writeText;
+  screen.innerHTML = `<div class="results-panel ${completed ? "won" : "lost"}"><div class="result-symbol">${icon(completed ? "trophy" : "replay")}</div><h2>${completed ? "¡Camino completo!" : lastLoss}</h2><p>${level.name} · Intento ${getAttempts(level.id)}${completed ? "<br/>Ese ritmo ya es tuyo." : ""}</p>${headline}<div class="final-score" id="final-score">${fmt(run.score)}</div><div class="record-status">${record ? `${icon("trophy")} NUEVO RÉCORD` : `RÉCORD PERSONAL · ${fmt(getRecord())}`}</div><div class="result-stats"><div><strong>${run.accuracy}%</strong><span>Precisión</span></div><div><strong>${run.maxCombo}</strong><span>Combo máx.</span></div><div><strong>${run.crystals}</strong><span>Cristales</span></div></div><div class="judgment-summary"><span><i class="perfect-dot"></i>${run.perfect} perfectos</span><span>${run.good} buenos</span><span>${run.misses} fallos</span></div>${bank}<button class="primary" id="replay-button">${icon("replay")}Volver a jugar</button><div class="result-links"><button class="text-button" id="back-home">${icon("home")}Inicio</button>${canShare ? `<button class="text-button" id="share-button">${icon("share")}Compartir</button>` : ""}</div>${!storageAvailable ? '<p class="storage-note">El navegador no permite guardar tu récord.</p>' : ""}</div>`;
   $("#replay-button").onclick = () => void resumeAudioAnd(beginRun);
   $("#back-home").onclick = home;
+  $("#share-button")?.addEventListener("click", () => void share(shareText(completed, percent)));
+  $("#equip-button")?.addEventListener("click", (event) => {
+    settings.skin = unlocked!.id;
+    saveSettings();
+    scene.setSkin(settings.skin);
+    const button = event.currentTarget as HTMLButtonElement;
+    button.textContent = "En uso";
+    button.disabled = true;
+  });
+  countUp($("#final-score"), run.score);
+  if (completed && !settings.reduced)
+    for (let i = 0; i < stars; i++) window.setTimeout(() => audio.star(i), 380 + i * 180);
+  else if (improved || record) audio.fanfare();
+  // Keyboard players can replay with Enter; touch players get no stray focus ring.
+  if (keyboardPlay) $("#replay-button").focus({ preventScroll: true });
 }
 async function resumeAudioAnd(action: () => void) {
   if (!silentMode) {
@@ -471,10 +627,18 @@ function frame() {
       lastPhase = phase;
       $("#phase").textContent = `${level.name.toLocaleUpperCase("es")} · ${phases[phase]}`;
     }
-    if (run.dead) finishRun(false);
+    if (!passedBest && bestAtStart > 0 && bestAtStart < 100 && !run.dead && progressPercent(judgedTime, DURATION) > bestAtStart) {
+      passedBest = true;
+      $("#best-marker").classList.add("passed");
+      if (!passedRecord || performance.now() > motivationUntil) {
+        announce("¡Superaste tu mejor marca!", "record", 2100);
+        audio.fanfare();
+      }
+    }
+    if (run.dead) die();
     else if (t >= DURATION) finishRun(true);
   } else if (mode === "countdown") {
-    const n = Math.ceil((countdownEnd - performance.now()) / 1000);
+    const n = Math.ceil((countdownEnd - performance.now()) / COUNT_STEP);
     if (n <= 0) countAction();
     else if (n !== lastCount) {
       lastCount = n;
@@ -494,7 +658,9 @@ scene.getView = () => ({
   time:
     mode === "tutorial" || (mode === "paused" && pauseMode === "tutorial")
       ? tutorialTime
-      : Math.max(0, audio.time - settings.offset / 1000),
+      : mode === "dying"
+        ? deathTime + ((performance.now() - deathAt) / 1000) * 0.12
+        : Math.max(0, audio.time - settings.offset / 1000),
   notes:
     mode === "tutorial" || (mode === "paused" && pauseMode === "tutorial")
       ? [tutorialNote]
@@ -505,6 +671,8 @@ scene.getView = () => ({
   active: mode === "playing",
   travel: mode === "tutorial" || pauseMode === "tutorial" && mode === "paused" ? 2.4 : level.travel,
   easterEggs: mode !== "tutorial" && !(mode === "paused" && pauseMode === "tutorial"),
+  bpm: pauseMode === "tutorial" ? undefined : level.bpm,
+  energy: mode === "tutorial" || pauseMode === "tutorial" ? undefined : run.energy,
 });
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -585,6 +753,27 @@ function openSettings() {
     void prepare(true);
   };
 }
+function collection() {
+  const total = getCrystals(), current = activeSkin().id;
+  showDialog(
+    "Tus esferas",
+    `<p class="dialog-intro">Tienes <strong class="crystal-count">${icon("diamond")}${fmt(total)}</strong> cristales. Consíguelos con un Perfecto en las plataformas con cristal. Nunca se gastan: al llegar a la cifra, la esfera es tuya.</p><fieldset class="skin-picker"><legend>Elige tu esfera</legend><div class="skin-options">${skins
+      .map((skin) => {
+        const open = isUnlocked(skin, total);
+        return `<label class="skin-option${open ? "" : " locked"}"><input type="radio" name="skin" value="${skin.id}" ${skin.id === current ? "checked" : ""} ${open ? "" : "disabled"} aria-label="${skin.name}${open ? "" : `, se desbloquea con ${skin.cost} cristales`}"/><span class="skin-choice"><span class="skin-orb" style="background:${skin.preview}">${open ? "" : icon("lock")}</span><strong>${skin.name}</strong><small>${open ? skin.description : `${icon("diamond")}${skin.cost}`}</small></span></label>`;
+      })
+      .join("")}</div></fieldset>`,
+  );
+  dialog
+    .querySelectorAll<HTMLInputElement>('input[name="skin"]')
+    .forEach((input) => {
+      input.onchange = () => {
+        settings.skin = getSkin(input.value).id;
+        saveSettings();
+        scene.setSkin(settings.skin);
+      };
+    });
+}
 async function install() {
   if (matchMedia("(display-mode: standalone)").matches) {
     toast("Ya estás jugando desde la app.");
@@ -629,6 +818,7 @@ laneControls.querySelectorAll<HTMLButtonElement>("button").forEach((button) => {
   button.addEventListener("pointerdown", (e) => {
     if (!e.isPrimary) return;
     e.preventDefault();
+    keyboardPlay = false;
     tap(Number(button.dataset.lane) as Lane);
   });
   button.addEventListener("click", (e) => {
@@ -646,11 +836,16 @@ document.addEventListener("keydown", (e) => {
     d: 2,
   };
   if (e.key in keys && ["playing", "tutorial"].includes(mode)) {
+    keyboardPlay = true;
     e.preventDefault();
     tap(keys[e.key]);
   }
   if (e.key === "Escape" && ["playing", "tutorial", "countdown"].includes(mode))
     pause();
+  if ((e.key === "r" || e.key === "R") && mode === "results") {
+    e.preventDefault();
+    void resumeAudioAnd(beginRun);
+  }
 });
 function isLandscape() {
   return matchMedia(
@@ -695,6 +890,7 @@ const updateSW = registerSW({
   },
 });
 document.documentElement.classList.toggle("reduced", settings.reduced);
+scene.setSkin(activeSkin().id);
 applyTheme();
 home();
 orientation();

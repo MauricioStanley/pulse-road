@@ -41,14 +41,35 @@ Pesadilla tiene 401 plataformas, ráfagas de hasta 6 por segundo y patrones fijo
 - Puedes permanecer en un carril para varias plataformas seguidas. Salirte antes de aterrizar no cuenta como acierto.
 - Perfecto: ya estabas en el carril al aterrizar. Bien: llegaste dentro del pequeño margen tardío. La transición visual tiene 45 ms de asentamiento.
 - Margen tardío por nivel: Fácil 200 ms; Medio 140 ms; Difícil 100 ms; Pesadilla 65 ms. No hay penalización por seleccionar anticipadamente el siguiente carril después del aterrizaje anterior.
-- En computadora: flechas izquierda, abajo y derecha; A, S y D. Escape pausa.
+- En computadora: flechas izquierda, abajo y derecha; A, S y D. Escape pausa. En resultados, R vuelve a jugar.
 - Empiezas con 100 de energía. Daño y recuperación dependen del nivel.
 - Multiplicador ×2 con 10 aciertos, ×3 con 20 y ×4 con 30. Perfecto: 100 puntos × multiplicador; Bien: 60 × multiplicador.
-- Los cristales requieren un Perfecto y añaden 25 puntos.
-- Completar da una estrella; 75 % de precisión da dos y 90 % da tres.
+- Los cristales requieren un Perfecto y añaden 25 puntos. También se suman a tu colección (ver abajo).
+- Completar da una estrella; 75 % de precisión da dos y 90 % da tres. La precisión se mide sobre las plataformas alcanzadas: al completar la canción equivale a todas.
 - El tutorial enseña el nuevo aterrizaje sin daño; se repite desde Ajustes.
 
 Cada Perfecto emite brillo y partículas; con efectos reducidos queda un anillo sencillo. Cada fallo emite un breve sonido de daño original, salvo al silenciar. Aparecen mensajes de ánimo al alcanzar hitos de puntuación y frases aleatorias al perder, sin repetir consecutivamente.
+
+## Sensación de juego
+
+- **El mundo late con la canción.** Bordes de la pista, cuadrícula, anillos del horizonte, estrellas y torres ecualizadoras a los lados reaccionan a cada golpe de bombo, con la intensidad de cada sección. Al empezar una sección nueva, una onda recorre la pista.
+- **Aterrizajes con peso.** La esfera se aplasta al caer, la plataforma se ilumina y se hunde, y un anillo se expande. Los saltos son más altos cuanto más separadas están las plataformas. La plataforma fallada se agrieta y cae.
+- **Aciertos musicales.** Cada aterrizaje toca una nota de la escala pentatónica de la canción; el combo sube dos octavas y vuelve a empezar. Todo el sonido sigue siendo sintetizado.
+- **Fiebre.** Con 30 de combo (el multiplicador ×4) la pista se tiñe, aparecen líneas de velocidad y la estela se alarga. Los saltos a ×2 y ×3 también se anuncian. No cambia la puntuación: es la recompensa visible del ×4.
+- **Tensión.** Con 40 de energía o menos, los bordes de la pantalla laten en rojo al ritmo.
+- **Caída.** Al perder, la música frena como un disco, el mundo sigue a cámara lenta y la esfera se rompe en pedazos antes de mostrar los resultados.
+- **Récord en vivo.** Durante la partida se anuncia el momento en que superas tu récord de puntos o tu mejor marca de recorrido. La barra superior muestra tu mejor marca.
+
+Con efectos reducidos no hay pulso, torres animadas, sacudidas, aplastamiento, fragmentos, destellos ni animaciones de resultados.
+
+## Progreso y colección
+
+- **Mejor marca.** Al perder ves qué porcentaje de la canción recorriste y tu mejor marca anterior. Solo una canción completa cuenta como 100 %.
+- **Tarjetas de dificultad.** La portada muestra las estrellas y la mejor marca de cada nivel.
+- **Esferas.** Los cristales conseguidos se acumulan para siempre y nunca se gastan. Al alcanzar cada cifra se desbloquea una esfera: Brasa (8), Escarcha (25), Oro (50), Galaxia (90), Eclipse (150) y Prisma (240). Una partida perfecta de Fácil da 10 cristales. Elige la esfera en el botón **Esferas** de la portada; la esfera Pulso sigue el color del juego.
+- **Compartir.** Los resultados ofrecen compartir la puntuación con el menú del teléfono o, si no existe, copiarla con el enlace del juego.
+
+La mejor marca, las estrellas y los cristales se guardan en claves nuevas del navegador; los récords e intentos existentes no cambian. El modo ultraligero también suma cristales, mejor marca y estrellas.
 
 Todos los recorridos contienen guiños decorativos originales: anillos dorados, cajas de bonus, bloques de césped y portales. Están fuera de los carriles, no son obstáculos ni coleccionables. No utilizan personajes, logotipos ni audio de otros videojuegos.
 

@@ -22,7 +22,9 @@ export class Run {
   readonly judged = new JudgmentLog();
   constructor(readonly notes: readonly Note[], readonly level: Level = getLevel("medio")) {}
   get multiplier() { return Math.min(4, 1 + Math.floor(this.combo / 10)); }
-  get accuracy() { return this.notes.length ? Math.round(100 * (this.perfect + this.good * 0.6) / this.notes.length) : 0; }
+  // Over the platforms actually reached. A finished song has judged every note,
+  // so stars are unchanged; an early fall no longer reads as "1 %".
+  get accuracy() { return this.index ? Math.round(100 * (this.perfect + this.good * 0.6) / this.index) : 0; }
   get dead() { return this.energy <= 0; }
   get stars() { return !this.finished || this.dead ? 0 : this.accuracy >= 90 ? 3 : this.accuracy >= 75 ? 2 : 1; }
   advance(time: number): Hit[] {

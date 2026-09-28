@@ -2,6 +2,7 @@ import { createChart, CHART_VERSION, type Lane } from "../core/chart";
 import { levels, getLevel, levelLabel } from "../core/levels";
 import { Run, type Hit } from "../core/rules";
 import { encouragements, lossMessages, nextMessage } from "../core/messages";
+import { progressPercent } from "../core/progress";
 import { themes } from "../themes";
 import { drawLite, liteSize } from "./renderer";
 
@@ -185,8 +186,14 @@ function pause(reason="Tu ritmo puede esperar.") {
 }
 function finish(completed:boolean) {
   if(mode==="results")return;
+  const reached=progressPercent(clock()-finiteOffset(),level.duration,completed);
   stopMusic();run.finished=completed;
   const old=finite(read(recordKey()));if(run.score>old)save(recordKey(),run.score);
+  // Same keys as the full game: crystals, best mark and stars carry over.
+  const bestKey="pulse-best-"+CHART_VERSION+"-"+level.id, starKey="pulse-stars-"+CHART_VERSION+"-"+level.id;
+  if(reached>finite(read(bestKey)))save(bestKey,reached);
+  if(run.stars>finite(read(starKey)))save(starKey,run.stars);
+  if(run.crystals>0)save("pulse-crystals-v1",finite(read("pulse-crystals-v1"))+run.crystals);
   if(!completed)previousLoss=nextMessage(lossMessages,previousLoss);
   state("results");setText(feedback,"");setText(encouragement,"");
   panel.innerHTML='<h2>'+(completed?'¡Camino completo!':previousLoss)+'</h2><p>'+level.name+' · Intento '+finite(read(attemptKey()))+'</p><div class="final-score">'+run.score+'</div><p>Récord: '+Math.max(old,run.score)+' · '+run.stars+' de 3 estrellas</p><div class="stats">'+run.perfect+' perfectos · '+run.good+' buenos<br>'+run.misses+' fallos · '+run.crystals+' cristales<br>Combo máximo: '+run.maxCombo+'</div><button id="again">Volver a jugar</button><button id="back" class="secondary">Cambiar dificultad</button>';

@@ -17,8 +17,15 @@ class FakeAudioContext {
     this.state = "running";
     this.onstatechange?.();
   }
+  sampleRate = 44100;
+  gains: { gain: { value: number; setTargetAtTime: ReturnType<typeof vi.fn>; setValueAtTime: ReturnType<typeof vi.fn>; exponentialRampToValueAtTime: ReturnType<typeof vi.fn> } }[] = [];
   createGain() {
-    return { gain: { value: 1, setTargetAtTime: vi.fn(), setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: vi.fn(), disconnect: vi.fn() };
+    const node = { gain: { value: 1, setTargetAtTime: vi.fn(), setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: vi.fn(), disconnect: vi.fn() };
+    this.gains.push(node);
+    return node;
+  }
+  createBuffer(_channels: number, length: number) {
+    return { getChannelData: () => new Float32Array(length) };
   }
   createOscillator() {
     const oscillator = { type: "sine", frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: vi.fn(), disconnect: vi.fn(), start: vi.fn(), stop: vi.fn(), onended: undefined as undefined | (() => void) };
@@ -37,6 +44,7 @@ class FakeAudioContext {
     this.sources.push(entry);
     return {
       buffer: null,
+      playbackRate: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
       connect: vi.fn(),
       start: (...args: number[]) => {
         entry.started = args;
@@ -147,5 +155,32 @@ describe("Audio transport", () => {
     await expect(c.load(() => {})).rejects.toThrow();
     await c.load(() => {});
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+  it("plays landings as a climbing pentatonic run in the song's key", async () => {
+    const c = new Conductor(); await c.unlock();
+    c.setKey(74, true); // D minor, like First Light
+    const ctx = FakeAudioContext.instance;
+    const pitch = (combo: number) => {
+      c.hit("perfect", combo);
+      return ctx.oscillators[ctx.oscillators.length - 1].frequency.setValueAtTime.mock.calls[0][0] as number;
+    };
+    const semitones = (hz: number) => Math.round(12 * Math.log2(hz / 440) + 69);
+    expect([1, 2, 3, 4, 5, 6, 11].map(combo => semitones(pitch(combo)))).toEqual([74, 77, 79, 81, 84, 86, 74]);
+    c.hit("good", 1);
+    expect(semitones(ctx.oscillators[ctx.oscillators.length - 1].frequency.setValueAtTime.mock.calls[0][0])).toBe(62);
+    const before = ctx.oscillators.length;
+    c.mute(true); c.hit("perfect", 3); c.rise(); c.fanfare(); c.star(0);
+    expect(ctx.oscillators).toHaveLength(before);
+  });
+  it("slows and fades only the music on a fall, and restores it on the next play", async () => {
+    const c = new Conductor(); await c.unlock(); await c.load(() => {});
+    const ctx = FakeAudioContext.instance;
+    const [music] = ctx.gains;
+    c.play();
+    c.tapeStop(0.9);
+    expect(music.gain.setTargetAtTime).toHaveBeenCalledWith(0, expect.any(Number), expect.any(Number));
+    c.pause();
+    c.play();
+    expect(music.gain.setValueAtTime).toHaveBeenLastCalledWith(0.8, expect.any(Number));
   });
 });
