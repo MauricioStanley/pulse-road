@@ -1,4 +1,4 @@
-name: Test and publish Pulse Road
+name: Test and publish Neo Rush
 
 on:
   push:

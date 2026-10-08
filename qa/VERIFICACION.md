@@ -1,4 +1,4 @@
-# Verificación de Pulse Road
+# Verificación de Neo Rush
 
 Fecha: 16 de septiembre de 2026. Pruebas de navegador realizadas en el navegador integrado de Codex, con resoluciones CSS de 390×844, 320×568 y 1280×900. Esas resoluciones no implican pruebas en equipos físicos.
 

@@ -418,7 +418,7 @@ export class RoadScene extends Phaser.Scene {
     const alpha = Math.min(1, Math.max(0.12, depth * 1.8)) * fade;
     this.quad(
       [p.x - width / 2, y, p.x + width / 2, y, p.x + width / 2, y + extrusion, p.x - width / 2, y + extrusion],
-      obstacle ? 0x843f42 : 0x4e897f,
+      obstacle ? 0x843f42 : colorNumber(this.palette.tile),
       alpha,
     );
     const top = [back.x - bw / 2, by, back.x + bw / 2, by, p.x + width / 2, y, p.x - width / 2, y];
@@ -574,7 +574,7 @@ export class RoadScene extends Phaser.Scene {
       g.fillStyle(WAVE, (0.012 + beat * 0.016 + (fever ? 0.01 : 0)) * (5 - k));
       g.fillCircle(w / 2, horizon, core * (0.55 + k * 0.38));
     }
-    g.lineStyle(1, 0x375961, 0.35);
+    g.lineStyle(1, colorNumber(this.palette.ring), 0.35);
     g.strokeEllipse(w / 2, horizon + 5, w * 0.72, h * 0.08);
     g.strokeEllipse(w / 2, horizon + 5, w * 0.45, h * 0.05);
     if (!reduced && intensity > 0)

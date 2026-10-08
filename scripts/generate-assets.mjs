@@ -182,7 +182,7 @@ const conversion = spawnSync(
     "-metadata",
     "title=First Light",
     "-metadata",
-    "artist=Pulse Road",
+    "artist=Neo Rush",
     "public/audio/first-light.mp3",
   ],
   { stdio: "inherit" },

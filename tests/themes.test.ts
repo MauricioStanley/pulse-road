@@ -29,6 +29,7 @@ describe("Selectable palettes", () => {
       expect(contrast(t.hazard, t.background)).toBeGreaterThanOrEqual(3);
       expect(t.accent).not.toBe(t.hazard);
       expect(themeVariables(t.id)["--mint"]).toBe(t.accent);
+      expect(contrast(themeVariables(t.id)["--soft"], t.surface)).toBeGreaterThanOrEqual(4.5);
     },
   );
   it.each(themes)("remembers $name after reloading storage", async (t) => {
@@ -43,6 +44,21 @@ describe("Selectable palettes", () => {
     first.saveSettings();
     vi.resetModules();
     expect((await import("../src/storage")).settings.theme).toBe(t.id);
+  });
+  it("keeps Morado and Rosa as separate colors", () => {
+    const hueOf = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+      const max = Math.max(r, g, b), d = max - Math.min(r, g, b);
+      const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return (h * 60 + 360) % 360;
+    };
+    const purple = getTheme("purple"), pink = getTheme("pink");
+    expect(purple.name).toBe("Morado");
+    expect(pink.name).toBe("Rosa");
+    expect(hueOf(purple.accent)).toBeGreaterThan(250);
+    expect(hueOf(purple.accent)).toBeLessThan(285);
+    expect(hueOf(pink.accent)).toBeGreaterThan(310);
+    expect(hueOf(pink.accent)).toBeLessThan(340);
   });
   it("falls back safely for old or invalid preferences", () => {
     for (const value of [undefined, null, "unknown", 42, {}])

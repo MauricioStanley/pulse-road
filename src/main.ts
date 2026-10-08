@@ -35,10 +35,10 @@ const fmt = (n: number) => numberFormat.format(Math.round(n));
 const speedText = (rate: number) => `×${rate.toFixed(2).replace(".", ",")}`;
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
-  <aside class="desktop-note"><img src="${assetUrl("icons/icon.svg")}" width="44" height="44" alt=""/><span>Pulse Road</span><p>Un toque.<br/>Todo el ritmo.</p><div class="keyboard-guide"><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><small>También puedes usar el teclado. R vuelve a jugar.</small></div></aside>
-  <main class="cabinet" aria-label="Pulse Road, juego de ritmo">
+  <aside class="desktop-note"><img src="${assetUrl("icons/icon.svg")}" width="44" height="44" alt=""/><span>Neo Rush</span><p>Un toque.<br/>Todo el ritmo.</p><div class="keyboard-guide"><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><small>También puedes usar el teclado. R vuelve a jugar.</small></div></aside>
+  <main class="cabinet" aria-label="Neo Rush, juego de ritmo">
     <div id="game" aria-hidden="true"></div>
-    <header class="topbar"><a class="wordmark" href="#" aria-label="Pulse Road, inicio">${icon("bolt")}<span>pulse<span class="wordmark-light">road</span></span></a><div class="utilities"><button class="level-chip" id="level-chip"></button><button class="icon-button" id="sound-button" aria-label="Silenciar sonido">${icon("sound")}</button><button class="icon-button" id="settings-button" aria-label="Ajustes">${icon("settings")}</button></div></header>
+    <header class="topbar"><a class="wordmark" href="#" aria-label="Neo Rush, inicio">${icon("bolt")}<span>neo<span class="wordmark-light">rush</span></span></a><div class="utilities"><button class="level-chip" id="level-chip"></button><button class="icon-button" id="sound-button" aria-label="Silenciar sonido">${icon("sound")}</button><button class="icon-button" id="settings-button" aria-label="Ajustes">${icon("settings")}</button></div></header>
     <section id="hud" class="hud" hidden><div class="hud-score"><small>PUNTOS <span id="ghost-delta"></span></small><strong id="score">0</strong></div><div class="hud-combo"><strong id="combo">×1</strong><small id="combo-label">MULTIPLICADOR</small></div><button class="icon-button" id="pause-button" aria-label="Pausar partida">${icon("pause")}</button><div class="energy"><span id="energy-fill"></span></div><div id="power-row" class="power-row" aria-live="off"></div><div class="song-progress"><span id="progress-fill"></span><i id="best-marker" title="Tu mejor marca" hidden></i></div></section>
     <div id="phase" class="phase" hidden></div>
     <div id="motivation" class="motivation" role="status"></div>
@@ -52,7 +52,7 @@ app.innerHTML = `
     <div id="song-label" class="song-label" hidden>${icon("headphones")}<span id="track-name"></span><span id="song-time">0:00 / 1:20</span></div>
     <div id="orientation" class="orientation" hidden><div>${icon("replay")}<h2>Volvamos a vertical</h2><p>Tu partida está en pausa.<br/>Gira el teléfono para seguir.</p></div></div>
   </main>
-  <aside class="desktop-record"><span class="vertical-title">FOLLOW THE PULSE</span><div>${icon("infinity")}<p>Canciones, Infinito<br/>y un reto cada día.</p><small>Hecho para jugar con un dedo.</small></div></aside>
+  <aside class="desktop-record"><span class="vertical-title">FEEL THE RUSH</span><div>${icon("infinity")}<p>Canciones, Infinito<br/>y un reto cada día.</p><small>Hecho para jugar con un dedo.</small></div></aside>
   <dialog id="dialog"></dialog><div id="toast" class="toast" role="status"></div>
 `;
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) =>
@@ -236,7 +236,7 @@ function home() {
   feedback.className = "feedback";
   const tabs: [PlayKind, string, string][] = [["song", "Canciones", "music"], ["endless", "Infinito", "infinity"], ["daily", "Reto diario", "calendar"]];
   const found = foundRelics().length;
-  screen.innerHTML = `<div class="home-heading"><h1>PULSE<br/><span>ROAD</span></h1><p>Encuentra tu ritmo.</p></div>
+  screen.innerHTML = `<div class="home-heading"><h1>NEO<br/><span>RUSH</span></h1><p>Encuentra tu ritmo.</p></div>
     <div class="home-bottom"><div class="mode-tabs" role="tablist" aria-label="Modo de juego">${tabs.map(([id, name, glyph]) => `<button role="tab" data-kind="${id}" aria-selected="${kind === id}" tabindex="${kind === id ? 0 : -1}">${icon(glyph)}<span>${name}</span></button>`).join("")}</div>
     <div class="mode-panel" role="tabpanel">${modePanel()}</div>
     <div class="home-chips"><div class="record-line">${icon("trophy")}<span>RÉCORD</span><strong>${fmt(recordFor(kind))}</strong></div><button class="crystal-chip" id="collection-button" aria-label="Esferas. Tienes ${getCrystals()} cristales">${icon("diamond")}<strong>${fmt(getCrystals())}</strong><span>Esferas</span></button></div>
@@ -585,18 +585,18 @@ function die() {
   }, settings.reduced ? 450 : 1150);
 }
 function shareText(completed: boolean, percent: number) {
-  if (kind === "endless") return `Llegué a la etapa ${lastStage + 1} del modo Infinito en Pulse Road con ${fmt(run.score)} puntos. ¿Me superas?`;
-  if (kind === "daily") return `Reto del ${new Date().toLocaleDateString("es", { day: "numeric", month: "long" })}: etapa ${lastStage + 1} y ${fmt(run.score)} puntos en Pulse Road. Hoy el recorrido es igual para todos. ¿Me superas?`;
+  if (kind === "endless") return `Llegué a la etapa ${lastStage + 1} del modo Infinito en Neo Rush con ${fmt(run.score)} puntos. ¿Me superas?`;
+  if (kind === "daily") return `Reto del ${new Date().toLocaleDateString("es", { day: "numeric", month: "long" })}: etapa ${lastStage + 1} y ${fmt(run.score)} puntos en Neo Rush. Hoy el recorrido es igual para todos. ¿Me superas?`;
   const stars = "★".repeat(run.stars);
   return completed
-    ? `Completé ${level.name} en Pulse Road con ${fmt(run.score)} puntos ${stars}. ¿Me superas?`
-    : `Llegué al ${percent} % de ${level.name} en Pulse Road con ${fmt(run.score)} puntos. ¿Me superas?`;
+    ? `Completé ${level.name} en Neo Rush con ${fmt(run.score)} puntos ${stars}. ¿Me superas?`
+    : `Llegué al ${percent} % de ${level.name} en Neo Rush con ${fmt(run.score)} puntos. ¿Me superas?`;
 }
 async function share(text: string) {
   const url = new URL(assetUrl(""), location.href).href;
   try {
     if (typeof navigator.share === "function") {
-      await navigator.share({ title: "Pulse Road", text, url });
+      await navigator.share({ title: "Neo Rush", text, url });
       return;
     }
     await navigator.clipboard.writeText(`${text} ${url}`);
@@ -1003,7 +1003,7 @@ async function install() {
 function credits() {
   showDialog(
     "Detrás del pulso",
-    `<p><strong>Pulse Road</strong><br/>Un juego original para este proyecto.</p><p><strong>Cuatro pistas originales</strong><br/>Pequeña Órbita, First Light, Neon Sprint y Umbral Cero. Música y efectos sintetizados para el juego, sin muestras de terceros. Infinito repite First Light y la acelera.</p><p><strong>Reliquias del ritmo</strong><br/>Diez objetos musicales originales, dibujados para el juego: metrónomo, casete, diapasón, vinilo y más.</p><p><strong>Diseño y desarrollo</strong><br/>Proyecto creado con asistencia de Codex y Claude. Motor Phaser, tipografía Outfit y recursos gráficos originales.</p><p class="dialog-note">Inspirado en los juegos de ritmo. Sin recursos de Tiles Hop, Magic Tiles o Dancing Road. Licencias completas incluidas en el proyecto.</p>`,
+    `<p><strong>Neo Rush</strong><br/>Un juego original para este proyecto.</p><p><strong>Cuatro pistas originales</strong><br/>Pequeña Órbita, First Light, Neon Sprint y Umbral Cero. Música y efectos sintetizados para el juego, sin muestras de terceros. Infinito repite First Light y la acelera.</p><p><strong>Reliquias del ritmo</strong><br/>Diez objetos musicales originales, dibujados para el juego: metrónomo, casete, diapasón, vinilo y más.</p><p><strong>Diseño y desarrollo</strong><br/>Proyecto creado con asistencia de Codex y Claude. Motor Phaser, tipografía Outfit y recursos gráficos originales.</p><p class="dialog-note">Inspirado en los juegos de ritmo. Sin recursos de Tiles Hop, Magic Tiles o Dancing Road. Licencias completas incluidas en el proyecto.</p>`,
   );
 }
 $("#settings-button").onclick = openSettings;
@@ -1107,7 +1107,7 @@ window.addEventListener("beforeinstallprompt", (e) => {
 });
 window.addEventListener("appinstalled", () => {
   installEvent = null;
-  toast("Pulse Road ya está en tu pantalla de inicio.");
+  toast("Neo Rush ya está en tu pantalla de inicio.");
 });
 const updateSW = registerSW({
   immediate: true,

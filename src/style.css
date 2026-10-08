@@ -24,6 +24,13 @@
     --muted: #a4bebf;
     --line: #ffffff16;
     --coral: #ff897d;
+    --soft: #c7dad7;
+    --dim: #5d7277;
+    --edge: #3b595d;
+    --edge-strong: #486468;
+    --accent-deep: #255753;
+    --backdrop: #07151ebb;
+    --surface-glow: #0c222b70;
   }
   * {
     box-sizing: border-box;
@@ -103,7 +110,7 @@
     width: 5px;
   }
   ::-webkit-scrollbar-thumb {
-    background: #375d62;
+    background: var(--edge);
     border-radius: 4px;
   }
 }
@@ -115,7 +122,7 @@
     justify-content: center;
     gap: clamp(35px, 5vw, 100px);
     padding: 26px;
-    background: radial-gradient(ellipse at 50% 50%, #12303a70, transparent 65%);
+    background: radial-gradient(ellipse at 50% 50%, var(--surface-glow), transparent 65%);
   }
   .cabinet {
     --hud-top: max(25px, env(safe-area-inset-top));
@@ -126,7 +133,7 @@
     width: 430px;
     height: min(880px, calc(100dvh - 52px));
     min-height: 620px;
-    border: 1px solid #28414a;
+    border: 1px solid var(--panel-hover);
     border-radius: 30px;
     box-shadow: 0 24px 80px #0008;
     flex-shrink: 0;
@@ -195,7 +202,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #c1d7d8;
+    color: var(--soft);
     transition:
       background 0.18s,
       color 0.18s;
@@ -447,7 +454,7 @@
   }
   .home-heading p {
     font-size: 17px;
-    color: #bdcecd;
+    color: var(--soft);
     letter-spacing: 0.5px;
     margin-top: 19px;
   }
@@ -540,7 +547,7 @@
   .secondary {
     background: var(--panel);
     color: #eaf6ef;
-    border: 1px solid #35545a;
+    border: 1px solid var(--edge);
     font-size: 16px;
   }
   .secondary:hover {
@@ -566,7 +573,7 @@
   }
   #tutorial-button {
     margin-top: 5px;
-    color: #cee0de;
+    color: var(--soft);
   }
   .offline-label {
     display: flex;
@@ -575,7 +582,7 @@
     gap: 6px;
     font-size: 11px;
     line-height: 1.4;
-    color: #93b6b6;
+    color: var(--muted);
     margin-top: 5px;
     min-height: 20px;
   }
@@ -599,7 +606,7 @@
     height: 13px;
   }
   .update-button {
-    background: #264d45;
+    background: var(--accent-deep);
     color: var(--mint);
     padding: 8px;
     border-radius: 6px;
@@ -617,7 +624,7 @@
   }
   .desktop-note > span {
     font-weight: 600;
-    color: #deece9;
+    color: var(--text);
     font-size: 18px;
   }
   .desktop-note > p {
@@ -641,7 +648,7 @@
     height: 35px;
     font-family: inherit;
     font-size: 19px;
-    border: 1px solid #32515a;
+    border: 1px solid var(--edge);
     border-bottom-width: 3px;
     border-radius: 7px;
     color: var(--muted);
@@ -667,7 +674,7 @@
     font-weight: 500;
     letter-spacing: 5px;
     writing-mode: vertical-rl;
-    color: #5a7c84;
+    color: var(--dim);
   }
   .desktop-record > div > svg {
     color: var(--mint);
@@ -728,7 +735,7 @@
     grid-column: 1/-1;
     height: 4px;
     border-radius: 4px;
-    background: #2e4145;
+    background: var(--edge);
     margin-top: 17px;
     overflow: hidden;
   }
@@ -766,7 +773,7 @@
     text-align: center;
     font-size: 11px;
     letter-spacing: 2px;
-    color: #93b6b6;
+    color: var(--muted);
     pointer-events: none;
   }
   .lane-controls {
@@ -789,9 +796,9 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    color: #a7c7c4;
+    color: var(--muted);
     background: var(--road-surface);
-    border: 1px solid #2b5055;
+    border: 1px solid var(--edge);
     border-radius: 17px;
     touch-action: none;
     transition:
@@ -903,7 +910,7 @@
     width: 5px;
     height: 5px;
     border-radius: 5px;
-    background: #365258;
+    background: var(--edge);
   }
   .tutorial-dots span.on {
     background: var(--mint);
@@ -963,7 +970,7 @@
   .load-track {
     height: 4px;
     width: 100%;
-    background: #254349;
+    background: var(--edge);
     border-radius: 4px;
     overflow: hidden;
     margin: 28px 0;
@@ -981,7 +988,7 @@
     width: 70px;
     height: 70px;
     margin: 0 auto 25px;
-    background: #143d35;
+    background: var(--accent-deep);
     border-radius: 50%;
     display: grid;
     place-items: center;
@@ -1208,7 +1215,7 @@
   .result-stars svg {
     width: 27px;
     height: 27px;
-    color: #37535a;
+    color: var(--edge);
   }
   .result-stars .earned svg {
     color: #ffe8a2;
@@ -1286,7 +1293,7 @@
   dialog {
     background: var(--surface);
     color: var(--text);
-    border: 1px solid #335159;
+    border: 1px solid var(--edge);
     border-radius: 25px;
     padding: 26px;
     max-width: 410px;
@@ -1295,7 +1302,7 @@
     box-shadow: 0 22px 80px #0009;
   }
   dialog::backdrop {
-    background: #020b12bb;
+    background: var(--backdrop);
     backdrop-filter: blur(5px);
   }
   .dialog-head {
@@ -1312,7 +1319,7 @@
     margin-right: -9px;
   }
   dialog p {
-    color: #b9d0ce;
+    color: var(--soft);
     font-size: 15px;
     margin: 13px 0;
   }
@@ -1332,7 +1339,7 @@
   }
   .theme-options {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
   }
   .theme-option {
@@ -1414,7 +1421,7 @@
     width: 43px;
     height: 25px;
     border-radius: 20px;
-    background: #42606a;
+    background: var(--edge-strong);
     cursor: pointer;
     position: relative;
     margin: 0;
@@ -1435,7 +1442,7 @@
   }
   .setting-row input:checked:before {
     transform: translateX(18px);
-    background: #0b382b;
+    background: var(--accent-ink);
   }
   .sync-setting {
     margin: 24px 0 17px;
@@ -1474,7 +1481,7 @@
   .install-steps {
     padding-left: 24px;
     line-height: 1.7;
-    color: #b9d0ce;
+    color: var(--soft);
     font-size: 15px;
   }
   .install-steps li {
@@ -1500,7 +1507,7 @@
     opacity: 0;
     pointer-events: none;
     background: #eaf6ef;
-    color: #102d27;
+    color: var(--accent-ink);
     padding: 13px 19px;
     border-radius: 12px;
     max-width: calc(100% - 36px);
@@ -1628,7 +1635,7 @@
   }
   .skin-option.locked .skin-orb {
     /* Inset shade dims the orb but not the lock drawn above it. */
-    box-shadow: inset 0 0 0 30px #081317b8;
+    box-shadow: inset 0 0 0 30px var(--backdrop);
   }
   .skin-option.locked .skin-orb svg {
     width: 18px;
@@ -1854,7 +1861,7 @@
     font-size: 13px;
     min-height: 40px;
     padding: 8px;
-    color: #cee0de;
+    color: var(--soft);
   }
   .home-quick .text-button svg {
     width: 15px;

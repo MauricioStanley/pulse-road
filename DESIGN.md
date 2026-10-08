@@ -1,5 +1,5 @@
 ---
-name: Pulse Road
+name: Neo Rush
 description: Un circuito electrónico que responde a cada toque.
 colors:
   background: "#07151e"
@@ -43,7 +43,7 @@ components:
     width: "100%"
 ---
 
-# Design System: Pulse Road
+# Design System: Neo Rush
 
 ## Overview
 
@@ -62,7 +62,7 @@ Se conserva la dirección acordada: juguete electrónico luminoso, pista azul no
 
 Menta comunica acciones y aciertos; coral señala peligros y fallos. Marfil mantiene legible la información sobre azul noche. El texto secundario es gris verdoso. Los valores normativos están en el frontmatter.
 
-La paleta anterior es la opción predeterminada Menta. Desde Ajustes hay variantes Morado, Rojo y Verde: `src/themes.ts` es la fuente normativa de sus colores. Cada variante coordina acento, fondos, superficies, esfera y circuito sin cambiar composición ni reglas. En Rojo los peligros son ámbar, además de conservar su silueta marcada. El selector usa radios con nombre y marca de selección; no depende solo del color. La selección persiste localmente.
+La paleta anterior es la opción predeterminada Menta. Desde Ajustes hay variantes Morado, Rosa, Rojo y Verde: `src/themes.ts` es la fuente normativa de sus colores. Cada variante coordina acento, fondos, superficies, esfera, laterales de las plataformas, anillos del horizonte y circuito sin cambiar composición ni reglas. En Rosa y Rojo los peligros son ámbar, además de conservar su silueta marcada. El selector usa radios con nombre y marca de selección; no depende solo del color. La selección persiste localmente.
 
 **The Shape and Color Rule.** Las señales jugables combinan forma, posición y color: plataforma plana, obstáculo marcado y cristal romboidal.
 

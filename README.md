@@ -1,6 +1,8 @@
-# Pulse Road
+# Neo Rush
 
 [Jugar ahora](https://mauriciostanley.github.io/pulse-road/) · [Modo ultraligero](https://mauriciostanley.github.io/pulse-road/lite.html) · [QR para compartir](qr/pulse-road.png)
+
+Antes se llamaba Pulse Road. La dirección sigue siendo `/pulse-road/` para que el QR impreso siga funcionando y cada jugador conserve sus récords.
 
 Juego de ritmo móvil: cuatro canciones de 80 segundos, un modo Infinito que acelera sin final y un reto diario igual para todos. Escanea una URL publicada, elige uno de tres carriles y supera tu récord. No utiliza cuentas, anuncios ni servicios de pago durante la partida.
 
@@ -125,7 +127,7 @@ El juego está publicado en https://mauriciostanley.github.io/pulse-road/. El de
 
 GitHub Pages publica bajo `/pulse-road/`. El workflow define `BASE_PATH=/pulse-road/` y el código adapta los recursos, el manifiesto y el service worker a esa ruta. En desarrollo local el prefijo sigue siendo `/`.
 
-`PulseRoad-publicar.zip`, junto a la carpeta del proyecto, contiene la compilación local para alojamientos en la raíz de un dominio. Para GitHub Pages usa el workflow, no ese ZIP.
+`NeoRush-publicar.zip`, junto a la carpeta del proyecto, contiene la compilación local para alojamientos en la raíz de un dominio. Para GitHub Pages usa el workflow, no ese ZIP.
 
 Para generar el QR cuando la página pública responda correctamente:
 
@@ -149,7 +151,7 @@ Un navegador puede eliminar su caché por limpieza o falta de espacio. Los réco
 
 ## Ajustes
 
-En **Ajustes → Color del juego** elige Menta, Morado, Rojo o Verde. Cambian la esfera, pista y controles; la elección se guarda en ese navegador. En rojo, los peligros usan ámbar para distinguirlos del jugador; también conservan sus pinchos y marcas.
+En **Ajustes → Color del juego** elige Menta, Morado, Rosa, Rojo o Verde. Morado y Rosa son paletas separadas, sin mezclarse. Cambian la esfera, las plataformas, la pista y los controles; la elección se guarda en ese navegador. En Rosa y Rojo, los peligros usan ámbar para distinguirlos del jugador; también conservan sus pinchos y marcas.
 
 Controles (botones, arrastrar o deslizar), fantasma del récord, sonido, vibración compatible, efectos reducidos y desfase de −200 a +200 ms. Un desfase positivo retrasa la pista y la evaluación del toque para compensar una salida de audio tardía. Los auriculares Bluetooth pueden necesitar ajuste.
 

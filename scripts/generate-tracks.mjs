@@ -68,7 +68,7 @@ for (const track of tracks) {
   }
   const scratch=path.join(scratchDir, track.file+".wav");
   await fs.writeFile(scratch,wav);
-  const result=spawnSync("ffmpeg",["-hide_banner","-loglevel","error","-y","-i",scratch,"-codec:a","libmp3lame","-b:a","112k","-metadata","title="+track.title,"-metadata","artist=Pulse Road","public/audio/"+track.file+".mp3"],{stdio:"inherit"});
+  const result=spawnSync("ffmpeg",["-hide_banner","-loglevel","error","-y","-i",scratch,"-codec:a","libmp3lame","-b:a","112k","-metadata","title="+track.title,"-metadata","artist=Neo Rush","public/audio/"+track.file+".mp3"],{stdio:"inherit"});
   if(result.status!==0) throw new Error("FFmpeg could not encode "+track.title);
   console.log(track.title+" · "+track.bpm+" BPM · "+seconds+" s");
 }

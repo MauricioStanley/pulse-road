@@ -1,4 +1,4 @@
-# Pulse Road
+# Neo Rush
 <!-- impeccable:product-schema 1 -->
 
 ## Platform

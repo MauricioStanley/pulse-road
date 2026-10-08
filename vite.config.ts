@@ -10,8 +10,8 @@ export default defineConfig({
       includeAssets: ["icons/*.png", "icons/*.svg", "audio/*.mp3"],
       manifest: {
         id: base,
-        name: "Pulse Road",
-        short_name: "Pulse Road",
+        name: "Neo Rush",
+        short_name: "Neo Rush",
         lang: "es",
         description: "Tu próximo récord está a un toque.",
         start_url: base,

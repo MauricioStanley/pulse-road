@@ -65,7 +65,7 @@ function selectLane(value:Lane) {
   lane=value;
   for(let i=0;i<laneButtons.length;i++){
     laneButtons[i].className=i===lane?"selected":"";
-    laneButtons[i].style.backgroundColor=i===lane?palette.accent:"#17333a";
+    laneButtons[i].style.backgroundColor=i===lane?palette.accent:palette.surface;
     laneButtons[i].style.color=i===lane?"#102820":"#eaf6ef";
   }
 }
@@ -76,7 +76,7 @@ function home() {
   let options="",colors="";
   for(let i=0;i<levels.length;i++){const l=levels[i];options+='<option value="'+l.id+'"'+(l.id===level.id?' selected':'')+'>'+levelLabel(l)+'</option>';}
   for(let i=0;i<themes.length;i++)colors+='<option value="'+themes[i].id+'"'+(themes[i].id===palette.id?' selected':'')+'>'+themes[i].name+'</option>';
-  panel.innerHTML='<h1>Pulse Road</h1><p>Menos efectos. El mismo ritmo.<br>Colócate antes de que llegue la plataforma.</p><label for="level">Dificultad</label><select id="level">'+options+'</select><p id="track-info">'+level.track+' · '+level.bpm+' BPM · 80 s</p><div class="record">Récord: '+finite(read(recordKey()))+' · Intentos: '+finite(read(attemptKey()))+'</div><button id="play">Jugar</button><div class="switches"><button id="sound" class="secondary" aria-pressed="'+sound+'">Sonido: '+(sound?'sí':'no')+'</button><button id="practice" class="secondary">Cómo jugar</button></div><label for="color">Color de la esfera</label><select id="color">'+colors+'</select><p class="notice">Sin partículas, saltos decorativos ni vibración. Conserva plataformas, peligros, cristales y puntuación.</p><div class="links"><a id="full-mode" href="./">Volver al modo completo</a></div><p class="notice">En navegadores antiguos, la instalación y el modo sin conexión pueden no estar disponibles.</p>';
+  panel.innerHTML='<h1>Neo Rush</h1><p>Menos efectos. El mismo ritmo.<br>Colócate antes de que llegue la plataforma.</p><label for="level">Dificultad</label><select id="level">'+options+'</select><p id="track-info">'+level.track+' · '+level.bpm+' BPM · 80 s</p><div class="record">Récord: '+finite(read(recordKey()))+' · Intentos: '+finite(read(attemptKey()))+'</div><button id="play">Jugar</button><div class="switches"><button id="sound" class="secondary" aria-pressed="'+sound+'">Sonido: '+(sound?'sí':'no')+'</button><button id="practice" class="secondary">Cómo jugar</button></div><label for="color">Color de la esfera</label><select id="color">'+colors+'</select><p class="notice">Sin partículas, saltos decorativos ni vibración. Conserva plataformas, peligros, cristales y puntuación.</p><div class="links"><a id="full-mode" href="./">Volver al modo completo</a></div><p class="notice">En navegadores antiguos, la instalación y el modo sin conexión pueden no estar disponibles.</p>';
   el("play").style.backgroundColor=palette.accent;
   el("play").onclick=start;
   (el("level") as HTMLSelectElement).onchange=function(){level=getLevel((this as HTMLSelectElement).value);notes=createChart(level);preference();home();};
