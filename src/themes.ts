@@ -97,6 +97,25 @@ export function mix(from: string, to: string, amount: number) {
   return out;
 }
 
+/** Folder with a palette's app icons; Menta keeps the original paths. */
+export const iconFolder = (id: ThemeId) => (id === "mint" ? "icons/" : `icons/themes/${id}/`);
+/** Each palette installs from its own manifest, so the installed icon matches it. */
+export const manifestFile = (id: ThemeId) => (id === "mint" ? "manifest.webmanifest" : `manifest-${id}.webmanifest`);
+/** Points the tab icon, the iOS home-screen icon and the install manifest at a palette. */
+export function linkThemeIcons(id: ThemeId, url: (path: string) => string) {
+  const folder = iconFolder(id);
+  const links: [string, string][] = [
+    ['link[rel="icon"]', folder + "icon.svg"],
+    ['link[rel="apple-touch-icon"]', folder + "apple-touch-icon.png"],
+    // Only production builds link a manifest; the dev server has none.
+    ['link[rel="manifest"]', manifestFile(id)],
+  ];
+  for (let i = 0; i < links.length; i++) {
+    const link = document.querySelector(links[i][0]);
+    if (link) link.setAttribute("href", url(links[i][1]));
+  }
+}
+
 export function themeVariables(id: ThemeId) {
   const t = getTheme(id);
   return {

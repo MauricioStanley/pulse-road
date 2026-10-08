@@ -153,6 +153,8 @@ Un navegador puede eliminar su caché por limpieza o falta de espacio. Los réco
 
 En **Ajustes → Color del juego** elige Menta, Morado, Rosa, Rojo o Verde. Morado y Rosa son paletas separadas, sin mezclarse. Cambian la esfera, las plataformas, la pista y los controles; la elección se guarda en ese navegador. En Rosa y Rojo, los peligros usan ámbar para distinguirlos del jugador; también conservan sus pinchos y marcas.
 
+El ícono también sigue el color: la pestaña del navegador cambia al momento, y al instalar el juego en la pantalla de inicio se usa el ícono del color elegido en ese momento. Un ícono ya instalado no cambia al instante, porque el sistema no deja que una página web lo haga. En Android, Chrome puede actualizarlo por su cuenta más adelante. En iPhone hay que quitar el juego de la pantalla de inicio y volver a agregarlo.
+
 Controles (botones, arrastrar o deslizar), fantasma del récord, sonido, vibración compatible, efectos reducidos y desfase de −200 a +200 ms. Un desfase positivo retrasa la pista y la evaluación del toque para compensar una salida de audio tardía. Los auriculares Bluetooth pueden necesitar ajuste.
 
 ## Celulares lentos: modo ultraligero
@@ -187,7 +189,7 @@ No se garantiza rendimiento ni compatibilidad en el Samsung S3 Mini físico: un 
 - `src/profile.ts`: nivel, misiones, reliquias, hazañas, mejores de Infinito y fantasmas.
 - `src/style.css`: diseño adaptable y accesibilidad de la interfaz.
 - `scripts/generate-assets.mjs`: First Light; llama a `scripts/generate-icons.mjs`.
-- `scripts/generate-icons.mjs`: ícono con el nombre Neo Rush en Outfit, convertido a trazos.
+- `scripts/generate-icons.mjs`: ícono con el nombre Neo Rush en Outfit, convertido a trazos; un juego de íconos por color (Menta en `public/icons/`, el resto en `public/icons/themes/`).
 - `scripts/generate-tracks.mjs`: tres composiciones adicionales originales.
 - `tests/`: comprobaciones automáticas de reglas y transporte musical.
 - `qa/`: capturas y reporte de verificación.

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getTheme, themes, themeVariables } from "../src/themes";
+import { existsSync } from "node:fs";
+import { getTheme, iconFolder, linkThemeIcons, manifestFile, themes, themeVariables } from "../src/themes";
 import { assetUrl } from "../src/paths";
 
 function luminance(hex: string) {
@@ -63,6 +64,32 @@ describe("Selectable palettes", () => {
   it("falls back safely for old or invalid preferences", () => {
     for (const value of [undefined, null, "unknown", 42, {}])
       expect(getTheme(value).id).toBe("mint");
+  });
+});
+
+describe("Icon per palette", () => {
+  it("keeps the original icon and manifest paths for Menta", () => {
+    expect(iconFolder("mint")).toBe("icons/");
+    expect(manifestFile("mint")).toBe("manifest.webmanifest");
+  });
+  it.each(themes)("ships every $name icon file", (t) => {
+    for (const file of ["icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "maskable-512.png"])
+      expect(existsSync(`public/${iconFolder(t.id)}${file}`)).toBe(true);
+  });
+  it("points the tab icon, iOS icon and manifest at the chosen color", () => {
+    const links = new Map(["icon", "apple-touch-icon", "manifest"].map((rel) => [`link[rel="${rel}"]`, { href: "" }]));
+    vi.stubGlobal("document", {
+      querySelector: (selector: string) => {
+        const link = links.get(selector);
+        return link && { setAttribute: (_: string, value: string) => (link.href = value) };
+      },
+    });
+    linkThemeIcons("pink", (path) => `/pulse-road/${path}`);
+    expect([...links.values()].map((link) => link.href)).toEqual([
+      "/pulse-road/icons/themes/pink/icon.svg",
+      "/pulse-road/icons/themes/pink/apple-touch-icon.png",
+      "/pulse-road/manifest-pink.webmanifest",
+    ]);
   });
 });
 

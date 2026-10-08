@@ -34,13 +34,15 @@ describe("Ultralight budgets and compatibility",()=>{
     }
     const audio:any={currentTime:0,pause:()=>{},play:()=>undefined};
     const window:any={setTimeout:()=>0,addEventListener:()=>{}};
-    const scope=createContext({window,navigator:{},document:{body:{},getElementById:node,
+    const scope=createContext({window,navigator:{},document:{body:{},getElementById:node,querySelector:node,
       addEventListener:()=>{},createElement:(tag:string)=>tag==="audio"?audio:node(tag)},
       localStorage:{getItem:(key:string)=>storage[key]||null,setItem:(key:string,value:string)=>{storage[key]=value;}},
       location:{href:"http://example.test/lite.html"},
     });
     runInContext('Map=undefined;Set=undefined;Promise=undefined;Array.prototype.find=undefined;Array.prototype.includes=undefined;Number.isFinite=undefined;Object.assign=undefined;',scope);
     expect(()=>runInContext(bundle,scope)).not.toThrow();
+    expect(nodes['link[rel="icon"]'].getAttribute("href")).toBe("icons/icon.svg");
+    expect(nodes['link[rel="manifest"]'].getAttribute("href")).toBe("manifest.webmanifest");
     expect(nodes.panel.innerHTML).toContain("Menos efectos. El mismo ritmo.");
     expect(storage["pulse-render-mode"]).toBe("lite");
     expect(nodes.road.width).toBe(240);

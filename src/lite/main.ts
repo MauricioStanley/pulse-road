@@ -3,7 +3,7 @@ import { levels, getLevel, levelLabel } from "../core/levels";
 import { Run, type Hit } from "../core/rules";
 import { encouragements, lossMessages, nextMessage } from "../core/messages";
 import { progressPercent } from "../core/progress";
-import { themes } from "../themes";
+import { themes, linkThemeIcons } from "../themes";
 import { drawLite, liteSize } from "./renderer";
 
 const el = (id: string) => document.getElementById(id)!;
@@ -86,6 +86,8 @@ function home() {
   el("full-mode").onclick=(event)=>{event.preventDefault();try{localStorage.setItem("pulse-render-mode","normal");}catch{}location.href="./";};
   showUpdate();
   panel.style.backgroundColor=palette.background;
+  linkThemeIcons(palette.id,function(path){return path;});
+  const tint=document.querySelector('meta[name="theme-color"]');if(tint)tint.setAttribute("content",palette.background);
   paint();
 }
 function unlockEffects() {

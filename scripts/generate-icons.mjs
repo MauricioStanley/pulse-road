@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import sharp from "sharp";
+import { iconFolder, mix, themes } from "../src/themes.ts";
 
 // "NEO" and "RUSH" in Outfit at weight 850 with the home heading's -0.035 em
 // tracking (SIL OFL 1.1, see licenses/Outfit-OFL.txt), stored as outlines so
@@ -30,25 +31,35 @@ const neo = top + CAP * SCALE;
 const rush = neo + LINE;
 // The platform under the name is the same slab the orb lands on in the game.
 const slab = rush + 26;
-export const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><radialGradient id="glow" cx="50%" cy="48%" r="50%"><stop offset="0" stop-color="#70f4cb" stop-opacity=".2"/><stop offset="1" stop-color="#70f4cb" stop-opacity="0"/></radialGradient></defs><rect width="512" height="512" rx="112" fill="#07151e"/><rect width="512" height="512" rx="112" fill="url(#glow)"/>${word("NEO", neo, "#eaf6ef")}${word("RUSH", rush, "#70f4cb")}<path d="M196 ${slab} H316 L338 ${slab + 26} H174Z" fill="#70f4cb"/><path d="M174 ${slab + 26} H338 V${slab + 38} H174Z" fill="#228069"/><path d="M174 ${slab + 26} H338" stroke="#eaf6ef" stroke-opacity=".55" stroke-width="2"/></svg>`;
 
-// iOS and Android maskable icons get their own rounded mask: give them full,
-// opaque corners instead of transparent ones.
-const square = icon.replaceAll(' rx="112"', "");
+/** The icon in a palette: "NEO" in ivory, "RUSH" and the slab in its accent. */
+export function iconFor(t) {
+  const side = mix(t.dark, t.background, 0.35);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><radialGradient id="glow" cx="50%" cy="48%" r="50%"><stop offset="0" stop-color="${t.accent}" stop-opacity=".2"/><stop offset="1" stop-color="${t.accent}" stop-opacity="0"/></radialGradient></defs><rect width="512" height="512" rx="112" fill="${t.background}"/><rect width="512" height="512" rx="112" fill="url(#glow)"/>${word("NEO", neo, "#eaf6ef")}${word("RUSH", rush, t.accent)}<path d="M196 ${slab} H316 L338 ${slab + 26} H174Z" fill="${t.accent}"/><path d="M174 ${slab + 26} H338 V${slab + 38} H174Z" fill="${side}"/><path d="M174 ${slab + 26} H338" stroke="#eaf6ef" stroke-opacity=".55" stroke-width="2"/></svg>`;
+}
 
-await fs.mkdir("public/icons", { recursive: true });
-await fs.writeFile("public/icons/icon.svg", icon);
-for (const size of [192, 512])
-  await sharp(Buffer.from(icon))
-    .resize(size)
+// Every palette gets its own set: the game points the tab icon, the iOS
+// home-screen icon and the install manifest at the selected color.
+for (const theme of themes) {
+  const icon = iconFor(theme);
+  // iOS and Android maskable icons get their own rounded mask: give them full,
+  // opaque corners instead of transparent ones.
+  const square = icon.replaceAll(' rx="112"', "");
+  const folder = `public/${iconFolder(theme.id)}`;
+  await fs.mkdir(folder, { recursive: true });
+  await fs.writeFile(`${folder}icon.svg`, icon);
+  for (const size of [192, 512])
+    await sharp(Buffer.from(icon))
+      .resize(size)
+      .png()
+      .toFile(`${folder}icon-${size}.png`);
+  await sharp(Buffer.from(square))
+    .resize(180)
     .png()
-    .toFile(`public/icons/icon-${size}.png`);
-await sharp(Buffer.from(square))
-  .resize(180)
-  .png()
-  .toFile("public/icons/apple-touch-icon.png");
-await sharp(Buffer.from(square))
-  .resize(384)
-  .extend({ top: 64, bottom: 64, left: 64, right: 64, background: "#07151e" })
-  .png()
-  .toFile("public/icons/maskable-512.png");
+    .toFile(`${folder}apple-touch-icon.png`);
+  await sharp(Buffer.from(square))
+    .resize(384)
+    .extend({ top: 64, bottom: 64, left: 64, right: 64, background: theme.background })
+    .png()
+    .toFile(`${folder}maskable-512.png`);
+}

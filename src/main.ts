@@ -16,7 +16,7 @@ import { applyRun, levelReward, missionAt, xpForRun, type Mission, type RunStats
 import { GhostRecorder, ghostLane, type Ghost } from "./core/ghost";
 import { Conductor } from "./audio/conductor";
 import { RoadScene } from "./game/RoadScene";
-import { themes, getTheme, themeVariables } from "./themes";
+import { themes, getTheme, themeVariables, iconFolder, linkThemeIcons } from "./themes";
 import { skins, getSkin, isUnlocked, nextSkin, perksFor, unlockLabel, unlockedBetween, type Skin } from "./skins";
 import { assetUrl } from "./paths";
 import { controlModes, getControlMode, laneFromX, stepLane, SwipeTracker } from "./input/touch";
@@ -35,7 +35,7 @@ const fmt = (n: number) => numberFormat.format(Math.round(n));
 const speedText = (rate: number) => `×${rate.toFixed(2).replace(".", ",")}`;
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
-  <aside class="desktop-note"><img src="${assetUrl("icons/icon.svg")}" width="44" height="44" alt=""/><span>Neo Rush</span><p>Un toque.<br/>Todo el ritmo.</p><div class="keyboard-guide"><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><small>También puedes usar el teclado. R vuelve a jugar.</small></div></aside>
+  <aside class="desktop-note"><img id="app-icon" src="${assetUrl("icons/icon.svg")}" width="44" height="44" alt=""/><span>Neo Rush</span><p>Un toque.<br/>Todo el ritmo.</p><div class="keyboard-guide"><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd><small>También puedes usar el teclado. R vuelve a jugar.</small></div></aside>
   <main class="cabinet" aria-label="Neo Rush, juego de ritmo">
     <div id="game" aria-hidden="true"></div>
     <header class="topbar"><a class="wordmark" href="#" aria-label="Neo Rush, inicio">${icon("bolt")}<span>neo<span class="wordmark-light">rush</span></span></a><div class="utilities"><button class="level-chip" id="level-chip"></button><button class="icon-button" id="sound-button" aria-label="Silenciar sonido">${icon("sound")}</button><button class="icon-button" id="settings-button" aria-label="Ajustes">${icon("settings")}</button></div></header>
@@ -878,6 +878,8 @@ function applyTheme() {
   document.documentElement.dataset.theme = theme.id;
   for (const [key, value] of Object.entries(themeVariables(theme.id))) document.documentElement.style.setProperty(key, value);
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme.background);
+  linkThemeIcons(theme.id, assetUrl);
+  $<HTMLImageElement>("#app-icon").src = assetUrl(iconFolder(theme.id) + "icon.svg");
   scene.setTheme(theme.id);
 }
 function themePicker() {
