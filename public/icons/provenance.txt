@@ -1,2 +1,2 @@
-Origin: Original Neo Rush SVG artwork in scripts/generate-assets.mjs, rendered to PNG with sharp. Created for this project; no external raster image source.
+Origin: Original Neo Rush icon in scripts/generate-icons.mjs, rendered to PNG with sharp. The words "NEO RUSH" are Outfit (SIL Open Font License 1.1, licenses/Outfit-OFL.txt) at weight 850, converted to SVG outlines. Created for this project; no external raster image source.
 Files: icon.svg, icon-192.png, icon-512.png, apple-touch-icon.png, maskable-512.png.

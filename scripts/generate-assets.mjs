@@ -1,26 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import sharp from "sharp";
 
 await fs.mkdir("public/audio", { recursive: true });
-await fs.mkdir("public/icons", { recursive: true });
-const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#07151e"/><path d="M105 329 231 259 407 329 281 399Z" fill="#70f4cb"/><path d="m105 329 176 70v28l-176-70Z" fill="#32a98a"/><path d="m281 399 126-70v28l-126 70Z" fill="#228069"/><circle cx="256" cy="195" r="82" fill="#eaf6ef"/><circle cx="278" cy="170" r="23" fill="#fff"/><circle cx="243" cy="210" r="48" fill="#70f4cb" opacity=".24"/></svg>`;
-await fs.writeFile("public/icons/icon.svg", icon);
-for (const size of [192, 512])
-  await sharp(Buffer.from(icon))
-    .resize(size)
-    .png()
-    .toFile(`public/icons/icon-${size}.png`);
-await sharp(Buffer.from(icon))
-  .resize(180)
-  .png()
-  .toFile("public/icons/apple-touch-icon.png");
-await sharp(Buffer.from(icon))
-  .resize(384)
-  .extend({ top: 64, bottom: 64, left: 64, right: 64, background: "#07151e" })
-  .png()
-  .toFile("public/icons/maskable-512.png");
+await import("./generate-icons.mjs");
 
 // Original composition and synthesis. 40 bars, 120 BPM, D minor. No samples.
 const sr = 44100,

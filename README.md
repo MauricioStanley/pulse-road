@@ -186,7 +186,8 @@ No se garantiza rendimiento ni compatibilidad en el Samsung S3 Mini físico: un 
 - `src/storage.ts`: ajustes, récords, cristales y mejores marcas con recuperación ante errores de almacenamiento.
 - `src/profile.ts`: nivel, misiones, reliquias, hazañas, mejores de Infinito y fantasmas.
 - `src/style.css`: diseño adaptable y accesibilidad de la interfaz.
-- `scripts/generate-assets.mjs`: First Light e iconos originales.
+- `scripts/generate-assets.mjs`: First Light; llama a `scripts/generate-icons.mjs`.
+- `scripts/generate-icons.mjs`: ícono con el nombre Neo Rush en Outfit, convertido a trazos.
 - `scripts/generate-tracks.mjs`: tres composiciones adicionales originales.
 - `tests/`: comprobaciones automáticas de reglas y transporte musical.
 - `qa/`: capturas y reporte de verificación.
@@ -199,7 +200,7 @@ npm run build
 npm audit
 ```
 
-La música y los iconos ya están incluidos. Para regenerarlos, instala FFmpeg y ejecuta `npm run assets` y `npm run tracks`. El audio intermedio se escribe en la carpeta de trabajo, no se distribuye con el sitio.
+La música y los iconos ya están incluidos. Para regenerarlos, instala FFmpeg y ejecuta `npm run assets` y `npm run tracks`. Solo los iconos: `npm run icons`, sin FFmpeg. El audio intermedio se escribe en la carpeta de trabajo, no se distribuye con el sitio.
 
 Para volver a preparar los dos ZIP de entrega en Windows, ejecuta `npm run build` y después `npm run package`. Los ZIP se escriben junto a la carpeta del proyecto; el paquete de publicación incluye los archivos de `dist` en su raíz, y el de proyecto incluye código, pruebas, documentación y licencias, sin `node_modules`.
 

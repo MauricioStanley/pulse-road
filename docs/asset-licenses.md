@@ -10,7 +10,7 @@ El sonido de daño es un chirrido de dos caídas de frecuencia sintetizado por W
 
 Los anillos dorados, la caja con emblema de pulso, el bloque de césped y los portales son geometrías originales. Son guiños de género a videojuegos clásicos, no recursos oficiales, personajes ni marcas de Mario, Sonic, Minecraft o Portal. No hay afiliación con esos juegos.
 
-La pista, plataformas, esfera, partículas e iconos de la aplicación son geometría original dibujada en Phaser/Canvas y SVG. Los iconos PNG se generan a partir del SVG original incluido; no son fotografías ni resultados de búsqueda. El archivo `public/icons/provenance.txt` conserva su origen.
+La pista, plataformas, esfera, partículas e iconos de la aplicación son geometría original dibujada en Phaser/Canvas y SVG. Los iconos PNG se generan a partir del SVG original incluido; no son fotografías ni resultados de búsqueda. El nombre «NEO RUSH» del ícono usa la tipografía Outfit (SIL Open Font License 1.1) convertida a trazos en `scripts/generate-icons.mjs`. El archivo `public/icons/provenance.txt` conserva su origen.
 
 Ningún recurso procede de Tiles Hop, Magic Tiles ni Dancing Road. Esos títulos son referencias de género, no afiliaciones.
 

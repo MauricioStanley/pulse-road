@@ -11,6 +11,7 @@
     "test": "vitest run tests",
     "package": "node scripts/package.mjs",
     "assets": "node scripts/generate-assets.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "tracks": "node scripts/generate-tracks.mjs",
     "qr": "node scripts/qr.mjs"
   },
