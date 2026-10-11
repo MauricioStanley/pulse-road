@@ -43,6 +43,18 @@ Pesadilla tiene 401 plataformas, ráfagas de hasta 6 por segundo y patrones fijo
 - **Infinito.** First Light en bucle, con etapas de 16 segundos. Cada etapa la canción acelera un 5 % (hasta ×1,6), las plataformas llegan antes, el daño sube y la recuperación baja. El recorrido se genera al azar con una semilla, siempre alineado con el pulso, sin plataformas simultáneas y sin saltos de un extremo al otro en corcheas antes de la etapa 5. En Infinito la Fiebre multiplica los puntos ×1,5.
 - **Reto diario.** Un Infinito cuyo recorrido depende de la fecha: todos los que juegan el mismo día reciben la misma pista. Guarda el mejor resultado del día.
 
+### Ranking de Infinito
+
+Infinito tiene una lista en línea compartida por todos los jugadores.
+
+- **Nombre.** Al terminar la primera partida de Infinito, o desde el botón **Ranking** de la portada, cada jugador elige un nombre de 3 a 16 caracteres: letras (con acentos y ñ), números, espacios, punto, guion y guion bajo. Se rechazan insultos comunes, también escritos con números (`p3nd3jo`). El nombre se puede cambiar en el ranking.
+- **Qué cuenta.** La mejor partida de Infinito de cada dispositivo. El reto diario y las canciones no entran.
+- **Durante la partida.** Bajo los puntos aparece el siguiente rival («#4 Ana · a 230») y, al superarlo, un aviso con el puesto que alcanzas.
+- **Resultados.** Tu puesto, si mejoraste, y cuántos puntos te faltan para pasar al siguiente jugador.
+- **Sin internet.** El juego nunca espera al servidor: la partida se guarda en el teléfono y se envía sola al volver la conexión.
+- **Servidor.** Proyecto de Supabase `neo-rush` (plan gratuito). La tabla está cerrada; el juego solo puede llamar a tres funciones que validan el nombre, que la puntuación sea posible para el tiempo jugado, y que no se envíe más de una partida cada 3 segundos por dispositivo. El esquema está en `supabase/ranking.sql`, con las consultas para revisar la lista y borrar un nombre.
+- **Límites.** Sin cuentas, un jugador que borra los datos del navegador aparece como nuevo. La validación frena puntuaciones imposibles, pero no a alguien que fabrique una partida creíble. En el plan gratuito, Supabase pausa el proyecto tras una semana sin uso; se reactiva desde su panel.
+
 ### Potenciadores (Infinito y reto diario)
 
 Flotan sobre algunas plataformas; se recogen al aterrizar (Perfecto o Bien).
@@ -74,7 +86,8 @@ Cada Perfecto emite brillo y partículas; con efectos reducidos queda un anillo 
 ## Sensación de juego
 
 - **El mundo late con la canción.** Bordes de la pista, cuadrícula, anillos del horizonte, estrellas y torres ecualizadoras a los lados reaccionan a cada golpe de bombo, con la intensidad de cada sección. Al empezar una sección nueva, una onda recorre la pista.
-- **Aterrizajes con peso.** La esfera se aplasta al caer, la plataforma se ilumina y se hunde, y un anillo se expande. Los saltos son más altos cuanto más separadas están las plataformas. La plataforma fallada se agrieta y cae.
+- **Saltos que avanzan.** La esfera siempre vuela de una plataforma a la siguiente: el arco cubre todo el espacio entre ambas (hasta un segundo), se adelanta un poco por la pista mientras la plataforma llega y se encoge con la perspectiva. Su sombra se queda en el suelo y la cámara la acompaña levemente. La plataforma que deja sigue de largo por debajo, así se ve que avanza en vez de saltar en el sitio.
+- **Aterrizajes con peso.** La esfera se aplasta al caer y se estira al subir y al bajar; la plataforma se ilumina y se hunde, y un anillo se expande. Los saltos son más altos cuanto más separadas están las plataformas. La plataforma fallada se agrieta y cae.
 - **Aciertos musicales.** Cada aterrizaje toca una nota de la escala pentatónica de la canción; el combo sube dos octavas y vuelve a empezar. Todo el sonido sigue siendo sintetizado.
 - **Fiebre.** Con 30 de combo (el multiplicador ×4) la pista se tiñe, aparecen líneas de velocidad y la estela se alarga. Los saltos a ×2 y ×3 también se anuncian. No cambia la puntuación: es la recompensa visible del ×4.
 - **Tensión.** Con 40 de energía o menos, los bordes de la pantalla laten en rojo al ritmo.
@@ -113,9 +126,10 @@ Con efectos reducidos no hay pulso, torres animadas, sacudidas, inclinación de 
 - **Reliquias del ritmo (10).** Objetos musicales originales —metrónomo, casete, diapasón, vinilo, audífonos, piano de juguete, corchea dorada, altavoz, batuta y corazón de cuarzo— escondidos en plataformas fijas: dos en cada canción y dos en Infinito (etapas 5 y 9). Brillan en dorado, con una columna de luz; se guardan con un Perfecto y dan 10 cristales. El botón **Reliquias** muestra las encontradas, su historia y pistas de las que faltan. No cambian la puntuación.
 - **Nivel y misiones.** Cada partida da experiencia, incluso al perder; subir de nivel da cristales. Siempre hay tres misiones activas (por ejemplo, «Llega a la etapa 6 en Infinito» o «Completa Medio»); al cumplir una se cobran sus cristales y llega la siguiente. Se ven en el botón **Misiones** o tocando el nivel de la barra superior.
 - **Fantasma.** Al batir el récord de una canción se guarda esa partida. En la siguiente, una esfera translúcida repite tus movimientos y junto a los puntos ves si vas por delante o por detrás del récord. Se desactiva en Ajustes.
+- **Racha diaria.** Cada día seguido con al menos una partida suma a la racha. La primera partida del día da cristales: 2 el primer día, 4 el segundo, y así hasta 10. La portada muestra la racha y avisa si hoy aún no juegas; si pasa un día entero sin jugar, empieza de nuevo.
 - **Compartir.** Los resultados ofrecen compartir la puntuación, la etapa o el reto del día con el menú del teléfono o, si no existe, copiarla con el enlace del juego.
 
-La mejor marca, las estrellas, los cristales, el perfil (nivel, misiones, reliquias, hazañas y mejores de Infinito) y los fantasmas se guardan en claves propias del navegador; los récords e intentos existentes no cambian. El modo ultraligero también suma cristales, mejor marca y estrellas, pero no incluye Infinito, reto diario, reliquias ni fantasma.
+La mejor marca, las estrellas, los cristales, el perfil (nivel, misiones, reliquias, hazañas, racha y mejores de Infinito) y los fantasmas se guardan en claves propias del navegador; el nombre del ranking y el código al azar de este dispositivo, en `pulse-ranking-v1`; los récords e intentos existentes no cambian. El modo ultraligero también suma cristales, mejor marca y estrellas, pero no incluye Infinito, reto diario, reliquias ni fantasma.
 
 Los antiguos guiños decorativos de la pista se retiraron: las reliquias los sustituyen con objetos propios del juego que además sirven para algo.
 
@@ -174,7 +188,9 @@ No se garantiza rendimiento ni compatibilidad en el Samsung S3 Mini físico: un 
 
 ## Estructura
 
-- `src/core/`: recorrido, puntuación y reglas independientes de gráficos: canciones (`chart.ts`, `rules.ts`), Infinito y reto diario (`endless.ts`), reliquias (`relics.ts`), misiones y nivel (`missions.ts`) y fantasma (`ghost.ts`).
+- `src/core/`: recorrido, puntuación y reglas independientes de gráficos: canciones (`chart.ts`, `rules.ts`), Infinito y reto diario (`endless.ts`), reliquias (`relics.ts`), misiones y nivel (`missions.ts`), fantasma (`ghost.ts`), racha (`streak.ts`), nombres del ranking (`names.ts`) y rival en vivo (`rivals.ts`).
+- `src/ranking.ts`: conexión con el ranking en línea, con partidas pendientes cuando no hay internet.
+- `supabase/ranking.sql`: tabla y funciones del ranking en Supabase.
 - `src/entry.ts`: arranque ligero que recuerda el modo, sin cargar Phaser cuando no hace falta.
 - `src/lite/`: reproductor de bajo consumo y renderizador Canvas 2D, con las reglas compartidas.
 - `public/lite.html` y `public/lite.css`: interfaz clásica para dispositivos antiguos.

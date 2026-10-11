@@ -3,6 +3,7 @@ import type { Difficulty } from "./core/levels";
 import { relics, type RelicId } from "./core/relics";
 import { levelFromXp, readMissions, type MissionState } from "./core/missions";
 import { readGhost, type Ghost } from "./core/ghost";
+import { advanceStreak, liveStreak, type Streak } from "./core/streak";
 import { getSkin, isUnlocked, type FeatId, type Progress } from "./skins";
 import { read, write, finiteScore, settings, getCrystals } from "./storage";
 
@@ -17,12 +18,19 @@ interface Profile {
   daily: Best & { day: string };
   endlessPlays: number;
   missions: MissionState;
+  streak?: Streak;
 }
 const KEY = "pulse-profile-v1";
 const best = (value: unknown): Best => {
   const b = value as Best;
   return { score: finiteScore(b?.score), stage: finiteScore(b?.stage) };
 };
+function readStreak(value: unknown): Streak | undefined {
+  const s = value as Streak;
+  if (!s || typeof s.day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s.day)) return undefined;
+  const count = Math.max(1, finiteScore(s.count));
+  return { day: s.day, count, best: Math.max(count, finiteScore(s.best)) };
+}
 function load(): Profile {
   const raw = read(KEY) as Partial<Profile> | null;
   const known = new Set(relics.map((r) => r.id));
@@ -38,12 +46,21 @@ function load(): Profile {
     daily: { ...best(raw?.daily), day: typeof raw?.daily?.day === "string" ? raw.daily.day : "" },
     endlessPlays: finiteScore(raw?.endlessPlays),
     missions: readMissions(raw?.missions),
+    streak: readStreak(raw?.streak),
   };
 }
 const profile = load();
 const save = () => write(KEY, profile);
 
 export const getXp = () => profile.xp;
+/** Counts a finished run for the daily streak; returns the reward to pay. */
+export function recordStreak(today: string) {
+  const result = advanceStreak(profile.streak, today);
+  profile.streak = result.streak;
+  save();
+  return result;
+}
+export const streakToday = (today: string) => liveStreak(profile.streak, today);
 export const playerLevel = () => levelFromXp(profile.xp);
 /** Adds experience; returns the levels crossed (for rewards). */
 export function addXp(amount: number) {

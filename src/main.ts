@@ -14,6 +14,12 @@ import {
 } from "./core/endless";
 import { applyRun, levelReward, missionAt, xpForRun, type Mission, type RunStats } from "./core/missions";
 import { GhostRecorder, ghostLane, type Ghost } from "./core/ghost";
+import { checkName, nameProblems, NAME_MAX } from "./core/names";
+import { nextRival, placeFor } from "./core/rivals";
+import {
+  cachedBoard, fetchBoard, flushPending, rankingName, RankingError, setRankingName, submitRun,
+  type Board, type RankedRun, type RankRow, type Submitted,
+} from "./ranking";
 import { Conductor } from "./audio/conductor";
 import { RoadScene } from "./game/RoadScene";
 import { themes, getTheme, themeVariables, iconFolder, linkThemeIcons } from "./themes";
@@ -27,7 +33,8 @@ import {
 } from "./storage";
 import {
   activeSkin, addXp, dailyBest, endlessBest, endlessPlays, foundRelics, getGhost, getMissions, grantFeat,
-  hasRelic, playerLevel, progressSnapshot, recordRelic, saveDaily, saveEndless, saveGhost, setMissions, startEndless,
+  hasRelic, playerLevel, progressSnapshot, recordRelic, recordStreak, saveDaily, saveEndless, saveGhost, setMissions, startEndless,
+  streakToday,
 } from "./profile";
 
 const numberFormat = new Intl.NumberFormat("es-SV");
@@ -39,7 +46,7 @@ app.innerHTML = `
   <main class="cabinet" aria-label="Neo Rush, juego de ritmo">
     <div id="game" aria-hidden="true"></div>
     <header class="topbar"><a class="wordmark" href="#" aria-label="Neo Rush, inicio">${icon("bolt")}<span>neo<span class="wordmark-light">rush</span></span></a><div class="utilities"><button class="level-chip" id="level-chip"></button><button class="icon-button" id="sound-button" aria-label="Silenciar sonido">${icon("sound")}</button><button class="icon-button" id="settings-button" aria-label="Ajustes">${icon("settings")}</button></div></header>
-    <section id="hud" class="hud" hidden><div class="hud-score"><small>PUNTOS <span id="ghost-delta"></span></small><strong id="score">0</strong></div><div class="hud-combo"><strong id="combo">×1</strong><small id="combo-label">MULTIPLICADOR</small></div><button class="icon-button" id="pause-button" aria-label="Pausar partida">${icon("pause")}</button><div class="energy"><span id="energy-fill"></span></div><div id="power-row" class="power-row" aria-live="off"></div><div class="song-progress"><span id="progress-fill"></span><i id="best-marker" title="Tu mejor marca" hidden></i></div></section>
+    <section id="hud" class="hud" hidden><div class="hud-score"><small>PUNTOS <span id="ghost-delta"></span></small><strong id="score">0</strong><small id="rival" class="rival"></small></div><div class="hud-combo"><strong id="combo">×1</strong><small id="combo-label">MULTIPLICADOR</small></div><button class="icon-button" id="pause-button" aria-label="Pausar partida">${icon("pause")}</button><div class="energy"><span id="energy-fill"></span></div><div id="power-row" class="power-row" aria-live="off"></div><div class="song-progress"><span id="progress-fill"></span><i id="best-marker" title="Tu mejor marca" hidden></i></div></section>
     <div id="phase" class="phase" hidden></div>
     <div id="motivation" class="motivation" role="status"></div>
     <div id="feedback" class="feedback" aria-live="off"></div>
@@ -96,6 +103,10 @@ let wasFever = false;
 let fevers = 0;
 let newRelics: RelicId[] = [];
 let progressAtStart = progressSnapshot();
+// Infinito ranking: the list the live rival is drawn from, and who is next.
+let rivalBoard: Board | null = null;
+let rival: RankRow | undefined;
+let rankGeneration = 0;
 let deathTime = 0;
 let deathAt = 0;
 let silentMode = false;
@@ -212,16 +223,28 @@ function levelPicker() {
 }
 const perkLine = (skin: Skin) =>
   `<button class="orb-perk" id="perk-button"><span class="perk-orb" style="background:${skin.preview}"></span><span><b>${skin.name}</b> · ${skin.perk}</span>${icon("arrow")}</button>`;
+const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+function rankChipText(board = cachedBoard()) {
+  return board?.me ? `<b>#${board.me.rank}</b><span>de ${fmt(board.total)}</span>` : "<b>Ranking</b>";
+}
+const rankChip = () => `<button class="rank-chip" id="ranking-button" aria-label="Ver el ranking de Infinito">${icon("trophy")}<span id="rank-chip-text">${rankChipText()}</span></button>`;
 function modePanel() {
   if (kind === "song") return levelPicker();
   const skin = activeSkin();
   if (kind === "endless") {
     const best = endlessBest();
-    return `<div class="mode-card"><div class="mode-card-head">${icon("infinity")}<div><strong>Infinito</strong><small>La canción acelera cada 16 s. ¿Hasta qué etapa llegas?</small></div></div><div class="mode-meta"><div class="mode-stats"><span>Mejor etapa <b>${best.stage || "—"}</b></span><span>Récord <b>${fmt(best.score)}</b></span></div><div class="power-legend" aria-label="Potenciadores">${(["shield", "heart", "double", "slow"] as const).map((p) => `<span class="power-dot ${p}" title="${powerNames[p]}: ${powerHints[p]}" role="img" aria-label="${powerNames[p]}: ${powerHints[p]}">${powerIcon(p)}</span>`).join("")}</div></div>${perkLine(skin)}</div>`;
+    return `<div class="mode-card"><div class="mode-card-head">${icon("infinity")}<div><strong>Infinito</strong><small>La canción acelera cada 16 s. ¿Hasta qué etapa llegas?</small></div>${rankChip()}</div><div class="mode-meta"><div class="mode-stats"><span>Mejor etapa <b>${best.stage || "—"}</b></span><span>Récord <b>${fmt(best.score)}</b></span></div><div class="power-legend" aria-label="Potenciadores">${(["shield", "heart", "double", "slow"] as const).map((p) => `<span class="power-dot ${p}" title="${powerNames[p]}: ${powerHints[p]}" role="img" aria-label="${powerNames[p]}: ${powerHints[p]}">${powerIcon(p)}</span>`).join("")}</div></div>${perkLine(skin)}</div>`;
   }
   const best = dailyBest(today);
   const date = new Date().toLocaleDateString("es", { day: "numeric", month: "long" });
   return `<div class="mode-card daily"><div class="mode-card-head">${icon("calendar")}<div><strong>Reto del ${date}</strong><small>El mismo recorrido para todos, solo hoy.</small></div></div><div class="mode-stats">${best.score ? `<span>Hoy: etapa <b>${best.stage}</b></span><span>Récord de hoy <b>${fmt(best.score)}</b></span>` : "<span>Aún no juegas el reto de hoy.</span>"}</div>${perkLine(skin)}</div>`;
+}
+function streakLine() {
+  const { count, playedToday } = streakToday(dayKey());
+  if (count < 2) return "Encuentra tu ritmo.";
+  return playedToday
+    ? `<span class="streak">${icon("flame")}Racha de ${count} días</span>`
+    : `<span class="streak waiting">${icon("flame")}Racha de ${count} días · juega hoy</span>`;
 }
 function recordFor(tab: PlayKind) {
   return tab === "song" ? getRecord(level.id) : tab === "endless" ? endlessBest().score : dailyBest(today).score;
@@ -236,7 +259,7 @@ function home() {
   feedback.className = "feedback";
   const tabs: [PlayKind, string, string][] = [["song", "Canciones", "music"], ["endless", "Infinito", "infinity"], ["daily", "Reto diario", "calendar"]];
   const found = foundRelics().length;
-  screen.innerHTML = `<div class="home-heading"><h1>NEO<br/><span>RUSH</span></h1><p>Encuentra tu ritmo.</p></div>
+  screen.innerHTML = `<div class="home-heading"><h1>NEO<br/><span>RUSH</span></h1><p>${streakLine()}</p></div>
     <div class="home-bottom"><div class="mode-tabs" role="tablist" aria-label="Modo de juego">${tabs.map(([id, name, glyph]) => `<button role="tab" data-kind="${id}" aria-selected="${kind === id}" tabindex="${kind === id ? 0 : -1}">${icon(glyph)}<span>${name}</span></button>`).join("")}</div>
     <div class="mode-panel" role="tabpanel">${modePanel()}</div>
     <div class="home-chips"><div class="record-line">${icon("trophy")}<span>RÉCORD</span><strong>${fmt(recordFor(kind))}</strong></div><button class="crystal-chip" id="collection-button" aria-label="Esferas. Tienes ${getCrystals()} cristales">${icon("diamond")}<strong>${fmt(getCrystals())}</strong><span>Esferas</span></button></div>
@@ -271,6 +294,17 @@ function home() {
   $("#perk-button")?.addEventListener("click", collection);
   $("#collection-button").onclick = collection;
   $("#missions-button").onclick = missionsDialog;
+  const rankButton = document.getElementById("ranking-button");
+  if (rankButton) {
+    rankButton.onclick = rankingDialog;
+    // Refresh the position quietly; the cached one shows meanwhile.
+    fetchBoard()
+      .then((board) => {
+        const text = document.getElementById("rank-chip-text");
+        if (text && mode === "home") text.innerHTML = rankChipText(board);
+      })
+      .catch(() => {});
+  }
   $("#relics-button").onclick = relicsDialog;
   $("#play-button").onclick = () => void prepare(kind, !settings.tutorial);
   $("#tutorial-button").onclick = () => void prepare(kind, true);
@@ -339,6 +373,10 @@ function resetRun() {
   motivationUntil = 0;
   $("#motivation").textContent = "";
   $("#ghost-delta").textContent = "";
+  $("#rival").textContent = "";
+  rivalBoard = null;
+  rival = undefined;
+  rankGeneration++;
   $("#power-row").innerHTML = "";
   scene.reset();
   feedback.textContent = "";
@@ -382,6 +420,15 @@ function beginEndless(daily: boolean) {
   const best = daily ? dailyBest(today) : endlessBest();
   recordAtStart = best.score;
   bestStageAtStart = best.stage;
+  if (!daily) {
+    rivalBoard = cachedBoard() ?? null;
+    const generation = rankGeneration;
+    fetchBoard(100)
+      .then((board) => {
+        if (generation === rankGeneration) rivalBoard = board;
+      })
+      .catch(() => {});
+  }
   audio.setKey(ENDLESS_TRACK.root, ENDLESS_TRACK.minor);
   updateBestMarker();
   $("#phase").textContent = `${daily ? "RETO DIARIO" : "INFINITO"} · ETAPA 1`;
@@ -569,6 +616,24 @@ function updateHUD() {
       delta.className = diff >= 0 ? "ahead" : "behind";
     }
   }
+  if (kind === "endless" && rivalBoard) updateRival(rivalBoard);
+}
+function updateRival(board: Board) {
+  const next = nextRival(board.top, run.score), line = $("#rival");
+  if (rival && run.score > rival.score && mode === "playing") {
+    const place = placeFor(board.top, run.score, board.total);
+    announce(`¡Superaste a ${rival.name}!${place ? ` Vas #${place}` : ""}`, "record", 1500);
+    vibrate([12, 40, 12]);
+  }
+  rival = next;
+  if (next) {
+    const gap = next.score - run.score;
+    line.textContent = `#${next.rank} ${next.name} · ${gap ? `a ${fmt(gap)}` : "empate"}`;
+    line.className = "rival";
+  } else if (board.top.some((row) => !row.me)) {
+    line.textContent = "#1 del ranking";
+    line.className = "rival top";
+  } else line.textContent = "";
 }
 function die() {
   if (mode !== "playing") return;
@@ -661,7 +726,8 @@ function finishRun(completed: boolean) {
   const xp = xpForRun(stats);
   const levelsGained = addXp(xp);
   const levelCrystals = levelsGained.reduce((sum, l) => sum + levelReward(l), 0);
-  addCrystals(run.crystals + missionCrystals + levelCrystals);
+  const streak = recordStreak(dayKey());
+  addCrystals(run.crystals + missionCrystals + levelCrystals + streak.reward);
   const after = progressSnapshot();
   const unlocked = unlockedBetween(progressAtStart, after);
   const gained = after.crystals - progressAtStart.crystals;
@@ -673,6 +739,7 @@ function finishRun(completed: boolean) {
   const rows: string[] = [
     `<div class="reward-row">${icon("diamond")}<span><b>+${gained}</b> cristales · ${fmt(after.crystals)} en total</span></div>`,
     `<div class="reward-row xp">${icon("level")}<span><b>+${xp} XP</b> · Nivel ${lvl}</span><div class="bank-track"><span style="transform:scaleX(${into / needed})"></span></div></div>`,
+    ...(streak.reward ? [`<div class="reward-row gold">${icon("flame")}<span>${streak.extended ? `¡Racha de ${streak.streak.count} días!` : "Primera partida del día"} <b>+${streak.reward}</b> ◆</span></div>`] : []),
     ...levelsGained.map((l) => `<div class="reward-row gold">${icon("level")}<span>¡Subiste a nivel ${l}! <b>+${levelReward(l)}</b> ◆</span></div>`),
     ...missions.completed.map((m: Mission) => `<div class="reward-row gold">${icon("check")}<span>Misión: ${m.text} <b>+${m.reward}</b> ◆</span></div>`),
     ...newRelics.map((id) => `<div class="reward-row relic">${relicIcon(id)}<span>Reliquia: ${getRelic(id)!.name} <b>+10</b> ◆</span></div>`),
@@ -686,7 +753,7 @@ function finishRun(completed: boolean) {
   const statsRow = endless
     ? `<div><strong>${run.accuracy}%</strong><span>Precisión</span></div><div><strong>${run.maxCombo}</strong><span>Combo máx.</span></div><div><strong>${endless.powers}</strong><span>Potenciadores</span></div>`
     : `<div><strong>${run.accuracy}%</strong><span>Precisión</span></div><div><strong>${run.maxCombo}</strong><span>Combo máx.</span></div><div><strong>${run.crystals}</strong><span>Cristales</span></div>`;
-  screen.innerHTML = `<div class="results-panel ${completed ? "won" : "lost"}"><div class="result-symbol">${icon(completed ? "trophy" : "replay")}</div><h2>${completed ? "¡Camino completo!" : lastLoss}</h2><p>${subtitle}</p>${headline}<div class="final-score" id="final-score">${fmt(run.score)}</div><div class="record-status">${recordText}</div><div class="result-stats">${statsRow}</div><div class="judgment-summary"><span><i class="perfect-dot"></i>${run.perfect} perfectos</span><span>${run.good} buenos</span><span>${run.misses} fallos</span></div><div class="rewards">${rows.join("")}</div><div class="results-actions"><button class="primary" id="replay-button">${icon("replay")}Volver a jugar</button><div class="result-links"><button class="text-button" id="back-home">${icon("home")}Inicio</button>${canShare ? `<button class="text-button" id="share-button">${icon("share")}Compartir</button>` : ""}</div></div>${!storageAvailable ? '<p class="storage-note">El navegador no permite guardar tu progreso.</p>' : ""}</div>`;
+  screen.innerHTML = `<div class="results-panel ${completed ? "won" : "lost"}"><div class="result-symbol">${icon(completed ? "trophy" : "replay")}</div><h2>${completed ? "¡Camino completo!" : lastLoss}</h2><p>${subtitle}</p>${headline}<div class="final-score" id="final-score">${fmt(run.score)}</div><div class="record-status">${recordText}</div><div class="result-stats">${statsRow}</div>${kind === "endless" ? '<div class="rank-card" id="rank-card" aria-live="polite"></div>' : ""}<div class="judgment-summary"><span><i class="perfect-dot"></i>${run.perfect} perfectos</span><span>${run.good} buenos</span><span>${run.misses} fallos</span></div><div class="rewards">${rows.join("")}</div><div class="results-actions"><button class="primary" id="replay-button">${icon("replay")}Volver a jugar</button><div class="result-links"><button class="text-button" id="back-home">${icon("home")}Inicio</button>${canShare ? `<button class="text-button" id="share-button">${icon("share")}Compartir</button>` : ""}</div></div>${!storageAvailable ? '<p class="storage-note">El navegador no permite guardar tu progreso.</p>' : ""}</div>`;
   $("#replay-button").onclick = () => void resumeAudioAnd(() => begin(kind));
   $("#back-home").onclick = home;
   $("#share-button")?.addEventListener("click", () => void share(shareText(completed, percent)));
@@ -701,6 +768,7 @@ function finishRun(completed: boolean) {
       });
     };
   });
+  if (kind === "endless") void rankResults({ score: run.score, stage, seconds: deathTime, skin: settings.skin });
   countUp($("#final-score"), run.score);
   if (completed && !settings.reduced && !endless)
     for (let i = 0; i < run.stars; i++) window.setTimeout(() => audio.star(i), 380 + i * 180);
@@ -954,6 +1022,137 @@ function collection() {
     };
   });
 }
+const nameForm = (label: string, value = "") =>
+  `<form class="name-form" novalidate><label for="rank-name">${label}</label><div><input id="rank-name" name="name" maxlength="${NAME_MAX}" autocomplete="nickname" autocapitalize="words" enterkeyhint="done" spellcheck="false" placeholder="Tu nombre" value="${escapeHtml(value)}"/><button class="secondary" type="submit">Guardar</button></div><small class="name-error"></small></form>`;
+/** Checks the name here first, then saves it; calls back once it is set. */
+function wireNameForm(root: HTMLElement, done: () => void) {
+  const form = root.querySelector<HTMLFormElement>(".name-form");
+  if (!form) return;
+  const input = form.querySelector<HTMLInputElement>("input")!, error = form.querySelector<HTMLElement>(".name-error")!;
+  const button = form.querySelector<HTMLButtonElement>("button")!;
+  input.oninput = () => (error.textContent = "");
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const checked = checkName(input.value);
+    if ("problem" in checked) {
+      error.textContent = nameProblems[checked.problem];
+      return;
+    }
+    button.disabled = true;
+    try {
+      const saved = await setRankingName(checked.name);
+      if (saved === "offline") toast("Sin conexión: tu nombre se enviará con tu próxima partida.");
+      done();
+    } catch {
+      error.textContent = nameProblems.word;
+      button.disabled = false;
+    }
+  };
+}
+function rankSummary(result: Submitted, score: number) {
+  const top = result.rank <= 3 ? " gold" : "";
+  const line = score >= result.best && result.improved
+    ? `¡Nueva marca en el ranking! Eres el <b>#${result.rank}</b> de ${fmt(result.total)}`
+    : `Eres el <b>#${result.rank}</b> de ${fmt(result.total)} · Tu mejor: ${fmt(result.best)}`;
+  return `<div class="rank-result${top}">${icon("trophy")}<span>${line}</span></div>`;
+}
+/** The next player above your best, from the list loaded for this run. */
+function revenge(result: Submitted) {
+  if (!rivalBoard) return "";
+  const above = nextRival(rivalBoard.top, result.best);
+  if (above && above.rank < result.rank)
+    return `<small class="rank-next">Te faltan <b>${fmt(above.score - result.best + 1)}</b> puntos para pasar a ${escapeHtml(above.name)} (#${above.rank}).</small>`;
+  return result.rank === 1 && result.total > 1 ? '<small class="rank-next">Estás en la cima. Defiende tu puesto.</small>' : "";
+}
+async function rankResults(entry: RankedRun) {
+  const card = document.getElementById("rank-card");
+  if (!card) return;
+  const generation = rankGeneration;
+  const open = `<button class="text-button" id="rank-open">Ver ranking ${icon("arrow")}</button>`;
+  const wire = () => document.getElementById("rank-open")?.addEventListener("click", rankingDialog);
+  if (!rankingName()) {
+    card.innerHTML = nameForm(entry.score > 0 ? "Elige un nombre y entra al ranking de Infinito" : "Elige tu nombre para el ranking de Infinito");
+    wireNameForm(card, () => void rankResults(entry));
+    return;
+  }
+  if (entry.score <= 0) {
+    card.innerHTML = `<div class="rank-result">${icon("trophy")}<span>Consigue puntos para entrar al ranking.</span></div>${open}`;
+    wire();
+    return;
+  }
+  card.innerHTML = `<div class="rank-result">${icon("trophy")}<span>Enviando al ranking…</span></div>`;
+  try {
+    const result = await submitRun(entry);
+    if (generation !== rankGeneration || !card.isConnected) return;
+    card.innerHTML = rankSummary(result, entry.score) + revenge(result) + open;
+    if (result.improved && result.rank <= 3) audio.fanfare();
+  } catch (error) {
+    if (generation !== rankGeneration || !card.isConnected) return;
+    const problem = error instanceof RankingError ? error.problem : "offline";
+    if (problem === "invalid_name") {
+      card.innerHTML = nameForm("Ese nombre ya no se puede usar. Elige otro", rankingName());
+      wireNameForm(card, () => void rankResults(entry));
+      return;
+    }
+    const text = problem === "invalid_run" ? "Esta partida no se pudo validar para el ranking." : "Sin conexión: se enviará cuando vuelvas a tener internet.";
+    card.innerHTML = `<div class="rank-result muted">${icon("trophy")}<span>${text}</span></div>${open}`;
+  }
+  wire();
+}
+function rankingBody(board: Board | undefined, state: "loading" | "ready" | "error", renaming = false) {
+  const name = rankingName();
+  const who = !name || renaming
+    ? nameForm(name ? "Tu nuevo nombre" : "Elige tu nombre para aparecer en la lista", name)
+    : `<div class="rank-name">${icon("badge")}<span>Juegas como <b>${escapeHtml(name)}</b></span><button class="text-button" id="rename-button">Cambiar</button></div>`;
+  if (!board)
+    return `${who}<p class="rank-empty">${state === "error" ? "No se pudo cargar el ranking. Revisa tu conexión." : "Cargando el ranking…"}</p>${state === "error" ? '<button class="secondary full" id="rank-retry">Reintentar</button>' : ""}`;
+  const rows = board.top
+    .map((row) => `<li class="${row.me ? "me" : ""}"><span class="rank-pos">${row.rank}</span><span class="mini-orb" style="background:${getSkin(row.skin).preview}"></span><span class="rank-who"><b>${escapeHtml(String(row.name))}</b><small>Etapa ${row.stage}</small></span><strong>${fmt(row.score)}</strong></li>`)
+    .join("");
+  const me = board.me;
+  const mine = !me
+    ? "Juega Infinito con tu nombre para entrar a la lista."
+    : board.top.some((row) => row.me)
+      ? `Eres el #${me.rank} de ${fmt(board.total)} jugadores.`
+      : `Tu posición: #${me.rank} de ${fmt(board.total)} · ${fmt(me.score)} puntos.`;
+  return `${who}${rows ? `<ol class="rank-list">${rows}</ol>` : '<p class="rank-empty">Aún no hay nadie. ¡Sé el primero!</p>'}<p class="rank-me">${mine}</p><p class="dialog-note">Cuenta tu mejor partida de Infinito en este dispositivo. El reto diario no entra en el ranking.${state === "loading" ? " Actualizando…" : state === "error" ? " Sin conexión: es la última lista guardada." : ""}</p>`;
+}
+function rankingDialog() {
+  let board = cachedBoard(), state: "loading" | "ready" | "error" = "loading", renaming = false;
+  showDialog("Ranking Infinito", '<div id="ranking-body" class="ranking-body"></div>', "wide");
+  const render = () => {
+    const body = document.getElementById("ranking-body");
+    if (!body || !dialog.open) return;
+    body.innerHTML = rankingBody(board, state, renaming);
+    wireNameForm(body, () => {
+      renaming = false;
+      refresh();
+    });
+    const rename = document.getElementById("rename-button");
+    if (rename)
+      rename.onclick = () => {
+        renaming = true;
+        render();
+        document.getElementById("rank-name")?.focus();
+      };
+    const retry = document.getElementById("rank-retry");
+    if (retry) retry.onclick = refresh;
+  };
+  const refresh = () => {
+    state = "loading";
+    render();
+    fetchBoard()
+      .then((fresh) => {
+        board = fresh;
+        state = "ready";
+      })
+      .catch(() => {
+        state = "error";
+      })
+      .finally(render);
+  };
+  refresh();
+}
 function missionsDialog() {
   const { level: lvl, into, needed } = playerLevel();
   const state = getMissions();
@@ -1005,7 +1204,7 @@ async function install() {
 function credits() {
   showDialog(
     "Detrás del pulso",
-    `<p><strong>Neo Rush</strong><br/>Un juego original para este proyecto.</p><p><strong>Cuatro pistas originales</strong><br/>Pequeña Órbita, First Light, Neon Sprint y Umbral Cero. Música y efectos sintetizados para el juego, sin muestras de terceros. Infinito repite First Light y la acelera.</p><p><strong>Reliquias del ritmo</strong><br/>Diez objetos musicales originales, dibujados para el juego: metrónomo, casete, diapasón, vinilo y más.</p><p><strong>Diseño y desarrollo</strong><br/>Proyecto creado con asistencia de Codex y Claude. Motor Phaser, tipografía Outfit y recursos gráficos originales.</p><p class="dialog-note">Inspirado en los juegos de ritmo. Sin recursos de Tiles Hop, Magic Tiles o Dancing Road. Licencias completas incluidas en el proyecto.</p>`,
+    `<p><strong>Neo Rush</strong><br/>Un juego original para este proyecto.</p><p><strong>Cuatro pistas originales</strong><br/>Pequeña Órbita, First Light, Neon Sprint y Umbral Cero. Música y efectos sintetizados para el juego, sin muestras de terceros. Infinito repite First Light y la acelera.</p><p><strong>Reliquias del ritmo</strong><br/>Diez objetos musicales originales, dibujados para el juego: metrónomo, casete, diapasón, vinilo y más.</p><p><strong>Ranking de Infinito</strong><br/>En línea con Supabase. Solo guarda el nombre que eliges, tu mejor partida de Infinito y un código al azar de este dispositivo. Los nombres son públicos en la lista.</p><p><strong>Diseño y desarrollo</strong><br/>Proyecto creado con asistencia de Codex y Claude. Motor Phaser, tipografía Outfit y recursos gráficos originales.</p><p class="dialog-note">Inspirado en los juegos de ritmo. Sin recursos de Tiles Hop, Magic Tiles o Dancing Road. Licencias completas incluidas en el proyecto.</p>`,
   );
 }
 $("#settings-button").onclick = openSettings;
@@ -1128,6 +1327,8 @@ const updateSW = registerSW({
 document.documentElement.classList.toggle("reduced", settings.reduced);
 scene.setSkin(activeSkin().id);
 applyTheme();
+void flushPending();
+window.addEventListener("online", () => void flushPending());
 syncTouchGuide();
 home();
 orientation();

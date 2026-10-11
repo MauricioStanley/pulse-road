@@ -17,6 +17,7 @@ const paths: Record<string, string> = {
   right: '<path d="m10 6 6 6-6 6"/>',
   center: '<circle cx="12" cy="12" r="4"/>',
   bolt: '<path d="m13 2-9 12h7l-1 8 10-13h-7Z"/>',
+  flame: '<path d="M12 22a6 6 0 0 0 6-6c0-4-3-6-4-10-1 2-2 3-4 4-2 1-4 3-4 6a6 6 0 0 0 6 6Z"/><path d="M12 22a2.5 2.5 0 0 1-2.5-2.5c0-1.5 1-2.5 2.5-3.5 1.5 1 2.5 2 2.5 3.5A2.5 2.5 0 0 1 12 22Z"/>',
   star: '<path d="m12 3 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.3-.9Z"/>',
   headphones: '<path d="M4 14v-3a8 8 0 0 1 16 0v3M4 12H2v7h5v-7Zm16 0h2v7h-5v-7Z"/>',
   home: '<path d="m3 11 9-8 9 8v10h-6v-7H9v7H3Z"/>',

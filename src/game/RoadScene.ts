@@ -9,7 +9,7 @@ export interface RoadView {
   mode: string;
   time: number;
   notes: readonly Note[];
-  judged?: { has(id: number): boolean };
+  judged?: { has(id: number): boolean; get?(id: number): Judgment | undefined };
   reduced: boolean;
   combo: number;
   active: boolean;
@@ -365,6 +365,10 @@ export class RoadScene extends Phaser.Scene {
     }
     this.cameras?.main?.shake(320, 0.012);
   }
+  /** How far a landed platform has sunk under the orb's weight. */
+  private sink(age: number, reduced: boolean) {
+    return reduced ? 0 : 7 * Math.sqrt(Math.min(1, age / 0.32));
+  }
   private project(lane: number, depth: number) {
     const w = this.scale.width,
       h = this.scale.height;
@@ -663,18 +667,25 @@ export class RoadScene extends Phaser.Scene {
       }
     } else {
       const approach = view.travel ?? 2;
-      const first = firstNoteAt(view.notes, view.time - 0.25);
+      const first = firstNoteAt(view.notes, view.time - 0.6);
       for (let index = first; index < view.notes.length; index++) {
         const note = view.notes[index];
         const until = note.time - view.time;
         if (until > approach + 0.1) break;
         const depth = 1 - until / approach;
         if (view.judged?.has(note.id)) {
-          // Hazards keep flowing past; the landed tile lives on as an effect.
-          for (const lane of note.obstacles)
-            this.tile(lane, depth, true, false, now, 0, Math.min(1, Math.max(0, (1.25 - depth) * 4)));
+          // Hazards and the platform you landed on keep flowing past the orb,
+          // so each hop visibly leaves one platform behind for the next.
+          const behind = Math.min(1, Math.max(0, (1.3 - depth) * 3.4));
+          if (behind <= 0) continue;
+          for (const lane of note.obstacles) this.tile(lane, depth, true, false, now, 0, behind);
+          const judgment = view.judged.get?.(note.id);
+          if (judgment && judgment !== "miss")
+            this.tile(note.lane, depth, false, false, now, this.sink(Math.max(0, -until), reduced), behind);
           continue;
         }
+        // Still unjudged this late: it is about to count as a miss.
+        if (until < -0.25) continue;
         const next = !upcoming;
         if (next) upcoming = note;
         for (const lane of note.obstacles) this.tile(lane, depth, true, false, now);
@@ -696,18 +707,19 @@ export class RoadScene extends Phaser.Scene {
         this.landings.splice(i, 1);
         continue;
       }
-      const p = this.project(l.lane, 1);
+      const flowing = 1 + (idle ? 0 : age / (view.travel ?? 2));
+      const p = this.project(l.lane, flowing);
       if (l.judgment === "miss") {
         // The missed platform cracks and drops out of the road.
         const k = age / life, drop = reduced ? 0 : 20 * age + 420 * age * age;
-        this.tile(l.lane, 1, false, false, now, drop, 1 - k, l.shielded ? POWER_COLORS.shield : CORAL);
+        this.tile(l.lane, flowing, false, false, now, drop, 1 - k, l.shielded ? POWER_COLORS.shield : CORAL);
         g.lineStyle(1.5, 0x512c37, 1 - k);
         g.lineBetween(p.x - p.half * 0.12, p.y - 10 + drop, p.x + p.half * 0.04, p.y - 3 + drop);
         g.lineBetween(p.x + p.half * 0.04, p.y - 3 + drop, p.x - p.half * 0.02, p.y + 4 + drop);
       } else if (age < 0.32) {
         // Landed: the tile lights up, sinks under the weight and sends a ring out.
         const k = age / 0.32, perfect = l.judgment === "perfect";
-        this.tile(l.lane, 1, false, false, now, reduced ? 0 : 7 * Math.sqrt(k), 1 - k, perfect ? 0xffffff : MINT);
+        this.tile(l.lane, flowing, false, false, now, this.sink(age, reduced), 1 - k, perfect ? 0xffffff : MINT);
         const grow = 1 + k * (reduced ? 0.5 : 2.4);
         g.lineStyle(perfect ? 3 : 1.5, l.relic ? GOLD : perfect ? IVORY : MINT, (1 - k) * 0.85);
         g.strokeEllipse(p.x, p.y + 2, p.half * 0.37 * grow, 14 * grow);
@@ -737,7 +749,24 @@ export class RoadScene extends Phaser.Scene {
       g.lineStyle(mine ? 2.2 : 1.5, MINT, mine ? 0.8 : 0.45 + beat * 0.2);
       g.strokeEllipse(p.x, p.y + 1, p.half * 0.37 * (1 + beat * 0.06), 14 * (1 + beat * 0.12));
     }
-    const target = this.project(idle ? 1 : this.lane, 1);
+    if (!upcoming)
+      for (let index = firstNoteAt(view.notes, view.time); index < view.notes.length; index++) {
+        if (!view.judged?.has(view.notes[index].id)) { upcoming = view.notes[index]; break; }
+      }
+    // The orb is always flying from the platform it left to the next one: the
+    // arc spans the whole gap (up to one second), and it leans forward along
+    // the road while the platform rushes in, so each hop reads as travel.
+    const leftAt = upcoming ? view.notes[upcoming.id - 1]?.time ?? upcoming.time - 1 : 0;
+    const flight = upcoming ? Math.min(1, Math.max(0.05, upcoming.time - leftAt)) : 1;
+    const hop = upcoming ? Math.min(1, Math.max(0, 1 - (upcoming.time - view.time) / flight)) : 0;
+    const arc = Math.sin(hop * Math.PI);
+    const flying = !reduced && !dying && !idle && !!upcoming;
+    const jump = reduced || dying ? 0 : idle ? Math.sin(now * 2) * 6 : flying ? arc * Math.min(70, 14 + flight * 56) : 0;
+    const lunge = flying ? arc * Math.min(0.07, (flight / (view.travel ?? 2)) * 0.45) : 0;
+    const ground = this.project(idle ? 1 : this.lane, 1 - lunge);
+    // Farther along the road, the orb and its arc shrink with perspective.
+    const scale = ground.half / this.project(1, 1).half;
+    const target = ground;
     // Fast, frame-rate-independent response: starts on the next frame and
     // settles within 100 ms at 30/60/120 FPS, even across the full track.
     const previousX = this.ballX;
@@ -751,17 +780,6 @@ export class RoadScene extends Phaser.Scene {
       this.trail.unshift(this.ballX);
       if (this.trail.length > 16) this.trail.pop();
     }
-    if (!upcoming)
-      for (let index = firstNoteAt(view.notes, view.time); index < view.notes.length; index++) {
-        if (!view.judged?.has(view.notes[index].id)) { upcoming = view.notes[index]; break; }
-      }
-    const gap = upcoming ? upcoming.time - (view.notes[upcoming.id - 1]?.time ?? upcoming.time - 1) : 1;
-    const flight = Math.min(0.5, gap * 0.85);
-    const untilLanding = upcoming ? upcoming.time - view.time : Infinity;
-    // The hop meets the platform at its musical landing, even if steering early.
-    // Wider gaps get taller arcs, so slow songs float and fast songs skip.
-    const jump = reduced || dying ? 0 : idle ? Math.sin(now * 2) * 6 :
-      untilLanding >= 0 && untilLanding <= flight ? Math.sin((1 - untilLanding / flight) * Math.PI) * (10 + flight * 62) : 0;
     const restingY = idle ? Math.min(target.y, h - (h <= 720 ? 326 : 365)) : target.y;
     let sx = 1, sy = 1;
     const landAge = now - this.landAt, missAge = now - this.badFlash;
@@ -770,9 +788,11 @@ export class RoadScene extends Phaser.Scene {
         const k = 1 - landAge / 0.16;
         sx = 1 + 0.2 * k;
         sy = 1 - 0.17 * k;
-      } else if (jump > 4) {
-        sx = 0.95;
-        sy = 1.06;
+      } else if (jump > 2) {
+        // Stretched along the fall and the take-off, round at the top.
+        const speed = Math.abs(Math.cos(hop * Math.PI));
+        sx = 1 - 0.07 * speed;
+        sy = 1 + 0.1 * speed;
       }
       // A fast lane change stretches the orb along its motion.
       const dash = Math.min(0.22, Math.abs(vx) * 0.12);
@@ -780,16 +800,16 @@ export class RoadScene extends Phaser.Scene {
       sy -= dash * 0.5;
     }
     const stumble = !reduced && missAge < 0.3 ? Math.sin((missAge / 0.3) * Math.PI) * 9 : 0;
-    const ballY = restingY - 24 - jump + stumble + (1 - sy) * 24;
+    const ballY = restingY - (24 + jump - (1 - sy) * 24) * scale + stumble;
     if (view.ghostLane !== undefined && !idle) {
       // Your record run, as a translucent orb racing beside you.
-      const ghostTarget = this.project(view.ghostLane, 1).x;
+      const ghostTarget = this.project(view.ghostLane, 1 - lunge).x;
       this.ghostX = this.ghostX < 0 ? ghostTarget : this.ghostX + (ghostTarget - this.ghostX) * (1 - Math.exp(-delta / 30));
-      const gy = restingY - 24 - jump;
+      const gy = restingY - (24 + jump) * scale;
       g.fillStyle(0xffffff, 0.1);
-      g.fillCircle(this.ghostX, gy, 22);
+      g.fillCircle(this.ghostX, gy, 22 * scale);
       g.lineStyle(1.5, 0xffffff, 0.45);
-      g.strokeCircle(this.ghostX, gy, 22);
+      g.strokeCircle(this.ghostX, gy, 22 * scale);
     } else this.ghostX = -1;
     if (!reduced && !idle && !dying && view.combo >= 10) {
       // A ribbon left on the road behind the orb; it bends with lane changes.
@@ -805,12 +825,14 @@ export class RoadScene extends Phaser.Scene {
       // Motion smear: two fading copies behind a fast lane change.
       for (let i = 1; i <= 2; i++) {
         g.fillStyle(this.trailColor(i, now), 0.16 / i);
-        g.fillCircle(this.ballX - vx * 16 * i, ballY, 22);
+        g.fillCircle(this.ballX - vx * 16 * i, ballY, 22 * scale);
       }
     }
     if (!this.shattered) {
-      g.fillStyle(0x030d16, 0.5);
-      g.fillEllipse(this.ballX, restingY + 2, 48 - jump * 0.4, 10);
+      // The shadow stays on the road under the orb: it shrinks and fades as
+      // the orb rises, and slides forward with it.
+      g.fillStyle(0x030d16, 0.5 * (1 - Math.min(0.6, jump / 120)));
+      g.fillEllipse(this.ballX, restingY + 2, (48 - jump * 0.4) * scale, 10 * scale);
     }
     const glowAge = now - this.perfectFlash;
     if (glowAge < 0.22 && !this.shattered) {
@@ -819,7 +841,7 @@ export class RoadScene extends Phaser.Scene {
     }
     this.ball
       .setPosition(this.ballX, ballY)
-      .setDisplaySize(100 * sx, 100 * sy)
+      .setDisplaySize(100 * sx * scale, 100 * sy * scale)
       .setAlpha(this.shattered ? 0 : view.mode === "results" ? 0.3 : 1);
     if (!this.shattered && !idle) {
       if (view.shields) {
@@ -938,6 +960,7 @@ export class RoadScene extends Phaser.Scene {
       const lean = reduced || idle ? 0 : Math.max(-0.02, Math.min(0.02, vx * 0.018));
       this.roll += (lean - this.roll) * Math.min(1, delta / 60);
       camera.setRotation(this.roll);
+      camera.setScroll(0, reduced ? 0 : -jump * 0.1);
       camera.setZoom(reduced ? 1 : 1 + beat * 0.012 + (fever ? 0.01 : 0));
     }
   }

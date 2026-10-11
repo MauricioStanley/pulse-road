@@ -3,6 +3,7 @@ import {
   applyRun, freshMissions, levelFromXp, levelReward, missionAt, missionLadder, readMissions, xpForRun, type RunStats,
 } from "../src/core/missions";
 import { GhostRecorder, ghostLane, readGhost } from "../src/core/ghost";
+import { advanceStreak, liveStreak, previousDay, streakReward } from "../src/core/streak";
 import { laneFromX, SwipeTracker, stepLane, getControlMode } from "../src/input/touch";
 import { placeRelics, relics, stageRelic } from "../src/core/relics";
 import { createChart } from "../src/core/chart";
@@ -177,6 +178,18 @@ describe("Profile", () => {
     expect(profile.hasFeat("relics")).toBe(true);
     expect(profile.progressSnapshot().feats.relics).toBe(true);
   });
+  it("keeps the daily streak across reloads and ignores broken data", async () => {
+    const data = stub();
+    data.set("pulse-profile-v1", JSON.stringify({ streak: { day: "2026-10-10", count: 3, best: 5 } }));
+    const profile = await import("../src/profile");
+    expect(profile.streakToday("2026-10-11")).toEqual({ count: 3, playedToday: false });
+    expect(profile.recordStreak("2026-10-11")).toMatchObject({ reward: 8, extended: true });
+    vi.resetModules();
+    expect((await import("../src/profile")).streakToday("2026-10-11")).toEqual({ count: 4, playedToday: true });
+    vi.resetModules();
+    data.set("pulse-profile-v1", JSON.stringify({ streak: { day: "ayer", count: 99 } }));
+    expect((await import("../src/profile")).streakToday("2026-10-11").count).toBe(0);
+  });
   it("saves and validates ghosts per song", async () => {
     const data = stub();
     const profile = await import("../src/profile");
@@ -184,5 +197,29 @@ describe("Profile", () => {
     expect(profile.getGhost("medio")?.inputs).toEqual([100, 2]);
     data.set("pulse-ghost-landing-v2-titi", "{\"inputs\":\"bad\"}");
     expect(profile.getGhost("titi")).toBeNull();
+  });
+});
+
+describe("Daily streak", () => {
+  it("finds the previous calendar day across months and years", () => {
+    expect(previousDay("2026-10-11")).toBe("2026-10-10");
+    expect(previousDay("2026-03-01")).toBe("2026-02-28");
+    expect(previousDay("2027-01-01")).toBe("2026-12-31");
+  });
+  it("grows on consecutive days, pays once a day and restarts after a gap", () => {
+    let result = advanceStreak(undefined, "2026-10-09");
+    expect(result).toMatchObject({ reward: 2, extended: false, streak: { count: 1 } });
+    result = advanceStreak(result.streak, "2026-10-10");
+    expect(result).toMatchObject({ reward: 4, extended: true, streak: { count: 2 } });
+    expect(advanceStreak(result.streak, "2026-10-10").reward).toBe(0);
+    const gap = advanceStreak(result.streak, "2026-10-13");
+    expect(gap.streak).toEqual({ day: "2026-10-13", count: 1, best: 2 });
+    expect(streakReward(30)).toBe(10);
+  });
+  it("stays alive until the end of the next day", () => {
+    const streak = { day: "2026-10-10", count: 4, best: 4 };
+    expect(liveStreak(streak, "2026-10-10")).toEqual({ count: 4, playedToday: true });
+    expect(liveStreak(streak, "2026-10-11")).toEqual({ count: 4, playedToday: false });
+    expect(liveStreak(streak, "2026-10-12")).toEqual({ count: 0, playedToday: false });
   });
 });
