@@ -32,6 +32,22 @@ export const themes = [
     hazard: "#ffad7d",
   },
   {
+    id: "magenta",
+    name: "Magenta",
+    accent: "#f03cff",
+    hover: "#f78bff",
+    dark: "#a21cb8",
+    background: "#1c0721",
+    surface: "#2c0d33",
+    panel: "#3f1449",
+    panelHover: "#561c63",
+    muted: "#e0b0e8",
+    road: "#36103f",
+    tile: "#8a3a99",
+    ring: "#63306e",
+    hazard: "#ffd27a",
+  },
+  {
     id: "pink",
     name: "Rosa",
     accent: "#ff7ac6",
@@ -105,7 +121,9 @@ export const manifestFile = (id: ThemeId) => (id === "mint" ? "manifest.webmanif
 export function linkThemeIcons(id: ThemeId, url: (path: string) => string) {
   const folder = iconFolder(id);
   const links: [string, string][] = [
-    ['link[rel="icon"]', folder + "icon.svg"],
+    // Tab icon: SVG where supported, the .ico for Safari.
+    ['link[rel="icon"][type="image/svg+xml"]', folder + "favicon.svg"],
+    ['link[rel="icon"][sizes]', folder + "favicon.ico"],
     ['link[rel="apple-touch-icon"]', folder + "apple-touch-icon.png"],
     // Only production builds link a manifest; the dev server has none.
     ['link[rel="manifest"]', manifestFile(id)],

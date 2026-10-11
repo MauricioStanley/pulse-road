@@ -73,7 +73,7 @@ Flotan sobre algunas plataformas; se recogen al aterrizar (Perfecto o Bien).
 - En **Ajustes → Controles** eliges cómo mover la esfera:
   - **Botones:** tres botones abajo (predeterminado).
   - **Arrastrar:** la pantalla se divide en tres columnas invisibles; tocar o arrastrar el dedo lleva la esfera a esa columna.
-  - **Deslizar:** cada 24 px de deslizamiento horizontal cambia un carril; un deslizamiento largo cruza dos. Tocar sin deslizar no mueve la esfera.
+  - **Deslizar:** cada deslizamiento mueve exactamente un carril, por largo que sea; responde en cuanto el dedo recorre 24 px de lado. Para cruzar dos carriles se desliza dos veces, o en zigzag sin levantar el dedo: volver unos 40 px cuenta como un deslizamiento al otro lado. El pequeño gancho del dedo al soltar se ignora, igual que los deslizamientos casi verticales. Tocar sin deslizar no mueve la esfera.
 - En computadora: flechas izquierda, abajo y derecha; A, S y D. Escape pausa. En resultados, R vuelve a jugar.
 - Empiezas con 100 de energía. Daño y recuperación dependen del nivel.
 - Multiplicador ×2 con 10 aciertos, ×3 con 20 y ×4 con 30. Perfecto: 100 puntos × multiplicador; Bien: 60 × multiplicador.
@@ -165,9 +165,9 @@ Un navegador puede eliminar su caché por limpieza o falta de espacio. Los réco
 
 ## Ajustes
 
-En **Ajustes → Color del juego** elige Menta, Morado, Rosa, Rojo o Verde. Morado y Rosa son paletas separadas, sin mezclarse. Cambian la esfera, las plataformas, la pista y los controles; la elección se guarda en ese navegador. En Rosa y Rojo, los peligros usan ámbar para distinguirlos del jugador; también conservan sus pinchos y marcas.
+En **Ajustes → Color del juego** elige Menta, Morado, Magenta, Rosa, Rojo o Verde. Morado, Magenta y Rosa son paletas separadas, sin mezclarse; Magenta es el más intenso de los tres. Cambian la esfera, las plataformas, la pista y los controles; la elección se guarda en ese navegador. En Magenta, Rosa y Rojo, los peligros usan ámbar para distinguirlos del jugador; también conservan sus pinchos y marcas.
 
-El ícono también sigue el color: la pestaña del navegador cambia al momento, y al instalar el juego en la pantalla de inicio se usa el ícono del color elegido en ese momento. Un ícono ya instalado no cambia al instante, porque el sistema no deja que una página web lo haga. En Android, Chrome puede actualizarlo por su cuenta más adelante. En iPhone hay que quitar el juego de la pantalla de inicio y volver a agregarlo.
+El ícono también sigue el color: la pestaña del navegador cambia al momento (con una «N» simple que se lee a 16 px, en SVG y en `.ico` para Safari), y al instalar el juego en la pantalla de inicio se usa el ícono del color elegido en ese momento. Un ícono ya instalado no cambia al instante, porque el sistema no deja que una página web lo haga. En Android, Chrome puede actualizarlo por su cuenta más adelante. En iPhone hay que quitar el juego de la pantalla de inicio y volver a agregarlo.
 
 Controles (botones, arrastrar o deslizar), fantasma del récord, sonido, vibración compatible, efectos reducidos y desfase de −200 a +200 ms. Un desfase positivo retrasa la pista y la evaluación del toque para compensar una salida de audio tardía. Los auriculares Bluetooth pueden necesitar ajuste.
 

@@ -97,17 +97,37 @@ describe("Touch steering", () => {
     expect(laneFromX(999, 390)).toBe(2);
     expect(laneFromX(10, 0)).toBe(1);
   });
-  it("turns one long swipe into several lane steps", () => {
-    const swipe = new SwipeTracker(24);
+  it("moves exactly one lane per swipe, however long", () => {
+    const swipe = new SwipeTracker(24, 40);
     expect(swipe.move(100)).toBe(0);
-    swipe.down(200);
-    expect(swipe.move(210)).toBe(0);
-    expect(swipe.move(226)).toBe(1);
-    expect(swipe.move(251)).toBe(1);
-    expect(swipe.move(240)).toBe(0);
-    expect(swipe.move(226)).toBe(-1);
-    swipe.up();
+    swipe.down(200, 500);
+    expect(swipe.move(210, 502)).toBe(0);
+    expect(swipe.move(226, 503)).toBe(1);
+    // A long swipe keeps going: still one lane.
+    for (const x of [260, 300, 360, 420]) expect(swipe.move(x, 505)).toBe(0);
+    // The hook of a lifting finger does not step back.
+    expect(swipe.move(395, 505)).toBe(0);
+    expect(swipe.up(395, 505)).toBe(0);
     expect(swipe.move(0)).toBe(0);
+  });
+  it("turns a clear zigzag into steps both ways without lifting", () => {
+    const swipe = new SwipeTracker(24, 40);
+    swipe.down(200);
+    expect(swipe.move(240)).toBe(1);
+    expect(swipe.move(270)).toBe(0);
+    expect(swipe.move(225)).toBe(-1);
+    expect(swipe.move(150)).toBe(0);
+    expect(swipe.move(195)).toBe(1);
+  });
+  it("ignores vertical swipes and catches quick flicks on release", () => {
+    const swipe = new SwipeTracker(24, 40);
+    swipe.down(200, 500);
+    expect(swipe.move(230, 400)).toBe(0);
+    expect(swipe.up(230, 400)).toBe(0);
+    swipe.down(200, 500);
+    expect(swipe.up(160, 505)).toBe(-1);
+  });
+  it("keeps steps inside the road and validates the saved mode", () => {
     expect(stepLane(2, 1)).toBe(2);
     expect(stepLane(0, -1)).toBe(0);
     expect(getControlMode("swipe")).toBe("swipe");

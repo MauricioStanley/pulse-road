@@ -47,10 +47,10 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["icons/*.png", "icons/*.svg", "audio/*.mp3"],
+      includeAssets: ["icons/*.png", "icons/*.svg", "icons/*.ico", "audio/*.mp3"],
       manifest: manifestFor("mint"),
       workbox: {
-        globPatterns: ["**/*.{js,css,html,woff2,mp3,png,svg,json}"],
+        globPatterns: ["**/*.{js,css,html,woff2,mp3,png,svg,ico,json}"],
         // Other palettes' PNGs are only needed when installing; keep them
         // out of the offline download.
         globIgnores: ["icons/themes/**/*.png"],

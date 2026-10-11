@@ -17,6 +17,12 @@ const words = {
     d: "M213 -285L213 -419L340 -419Q384 -419 406 -439.5Q428 -460 428 -495Q428 -530 406 -551Q384 -572 340 -572L213 -572L213 -711L370 -711Q443 -711 498 -684Q553 -657 584.5 -609.5Q616 -562 616 -498Q616 -434 584.5 -386.5Q553 -339 496 -312Q439 -285 361 -285ZM61 0L61 -711L251 -711L251 0ZM445 0L244 -304L415 -343L662 0ZM991.13 12Q899.13 12 829.63 -26Q760.13 -64 721.63 -131.5Q683.13 -199 683.13 -286L683.13 -711L873.13 -711L873.13 -270Q873.13 -235 888.63 -209Q904.13 -183 931.13 -169.5Q958.13 -156 991.13 -156Q1024.13 -156 1050.13 -169.5Q1076.13 -183 1091.13 -208.5Q1106.13 -234 1106.13 -269L1106.13 -711L1296.13 -711L1296.13 -285Q1296.13 -198 1258.13 -131Q1220.13 -64 1151.63 -26Q1083.13 12 991.13 12ZM1597.13 12Q1507.13 12 1441.13 -15Q1375.13 -42 1319.13 -101L1438.13 -220Q1475.13 -181 1518.13 -161.5Q1561.13 -142 1611.13 -142Q1654.13 -142 1676.63 -156Q1699.13 -170 1699.13 -194Q1699.13 -217 1681.63 -232.5Q1664.13 -248 1634.13 -260Q1604.13 -272 1569.13 -284Q1534.13 -296 1499.13 -312.5Q1464.13 -329 1434.13 -353.5Q1404.13 -378 1386.63 -414.5Q1369.13 -451 1369.13 -504Q1369.13 -572 1401.63 -621Q1434.13 -670 1493.13 -696Q1552.13 -722 1631.13 -722Q1709.13 -722 1776.13 -696.5Q1843.13 -671 1887.13 -624L1767.13 -505Q1734.13 -538 1701.13 -553.5Q1668.13 -569 1629.13 -569Q1596.13 -569 1576.13 -557.5Q1556.13 -546 1556.13 -524Q1556.13 -502 1574.13 -487.5Q1592.13 -473 1621.63 -461.5Q1651.13 -450 1686.13 -438Q1721.13 -426 1756.63 -409.5Q1792.13 -393 1821.63 -368Q1851.13 -343 1869.13 -305Q1887.13 -267 1887.13 -213Q1887.13 -106 1811.13 -47Q1735.13 12 1597.13 12ZM1938.5 0L1938.5 -711L2128.5 -711L2128.5 0ZM2370.5 0L2370.5 -711L2559.5 -711L2559.5 0ZM2044.5 -284L2044.5 -443L2442.5 -443L2442.5 -284Z",
   },
 };
+// A lone "N" (Outfit 900) for the tab icon: the full name can't be read at 16 px.
+const N = {
+  minX: 59,
+  maxX: 699,
+  d: "M59 0L59 -712L199 -712L259 -562L259 0ZM549 0L136 -519L199 -712L612 -193ZM549 0L499 -158L499 -712L699 -712L699 0Z",
+};
 const CAP = 711;
 const SCALE = 0.15;
 const LINE = 880 * SCALE; // line-height 0.88, as on the home screen
@@ -38,6 +44,34 @@ export function iconFor(t) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><radialGradient id="glow" cx="50%" cy="48%" r="50%"><stop offset="0" stop-color="${t.accent}" stop-opacity=".2"/><stop offset="1" stop-color="${t.accent}" stop-opacity="0"/></radialGradient></defs><rect width="512" height="512" rx="112" fill="${t.background}"/><rect width="512" height="512" rx="112" fill="url(#glow)"/>${word("NEO", neo, "#eaf6ef")}${word("RUSH", rush, t.accent)}<path d="M196 ${slab} H316 L338 ${slab + 26} H174Z" fill="${t.accent}"/><path d="M174 ${slab + 26} H338 V${slab + 38} H174Z" fill="${side}"/><path d="M174 ${slab + 26} H338" stroke="#eaf6ef" stroke-opacity=".55" stroke-width="2"/></svg>`;
 }
 
+/** Tab icon on a 64 px grid: the "N" over the landing slab, in the accent. */
+export function faviconFor(t) {
+  const scale = 34 / 712;
+  const x = 32 - ((N.minX + N.maxX) / 2) * scale;
+  const side = mix(t.dark, t.background, 0.35);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${t.background}"/><path transform="translate(${x.toFixed(2)} 44) scale(${scale.toFixed(4)})" fill="${t.accent}" d="${N.d}"/><path d="M20 48.5H44L48 53.5H16Z" fill="${t.accent}"/><path d="M16 53.5H48V56.5H16Z" fill="${side}"/></svg>`;
+}
+/** A .ico holding PNG images, for browsers without SVG favicons (Safari). */
+async function ico(svg, sizes) {
+  const images = await Promise.all(sizes.map((size) => sharp(Buffer.from(svg), { density: 400 }).resize(size).png().toBuffer()));
+  const header = Buffer.alloc(6 + 16 * images.length);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(images.length, 4);
+  let offset = header.length;
+  images.forEach((png, i) => {
+    const entry = 6 + 16 * i;
+    header.writeUInt8(sizes[i] % 256, entry);
+    header.writeUInt8(sizes[i] % 256, entry + 1);
+    header.writeUInt16LE(1, entry + 4);
+    header.writeUInt16LE(32, entry + 6);
+    header.writeUInt32LE(png.length, entry + 8);
+    header.writeUInt32LE(offset, entry + 12);
+    offset += png.length;
+  });
+  return Buffer.concat([header, ...images]);
+}
+
 // Every palette gets its own set: the game points the tab icon, the iOS
 // home-screen icon and the install manifest at the selected color.
 for (const theme of themes) {
@@ -48,6 +82,9 @@ for (const theme of themes) {
   const folder = `public/${iconFolder(theme.id)}`;
   await fs.mkdir(folder, { recursive: true });
   await fs.writeFile(`${folder}icon.svg`, icon);
+  const favicon = faviconFor(theme);
+  await fs.writeFile(`${folder}favicon.svg`, favicon);
+  await fs.writeFile(`${folder}favicon.ico`, await ico(favicon, [16, 32, 48]));
   for (const size of [192, 512])
     await sharp(Buffer.from(icon))
       .resize(size)

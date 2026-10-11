@@ -1,2 +1,3 @@
 Origin: Original Neo Rush icon in scripts/generate-icons.mjs, rendered to PNG with sharp. The words "NEO RUSH" are Outfit (SIL Open Font License 1.1, licenses/Outfit-OFL.txt) at weight 850, converted to SVG outlines. One set per palette from src/themes.ts: Menta in this folder, the others in themes/<palette>/. Created for this project; no external raster image source.
-Files: icon.svg, icon-192.png, icon-512.png, apple-touch-icon.png, maskable-512.png.
+The tab icon (favicon.svg, favicon.ico with 16, 32 and 48 px images) is a lone "N" in Outfit 900 over the landing slab.
+Files: icon.svg, icon-192.png, icon-512.png, apple-touch-icon.png, maskable-512.png, favicon.svg, favicon.ico.

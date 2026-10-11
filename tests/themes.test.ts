@@ -46,7 +46,7 @@ describe("Selectable palettes", () => {
     vi.resetModules();
     expect((await import("../src/storage")).settings.theme).toBe(t.id);
   });
-  it("keeps Morado and Rosa as separate colors", () => {
+  it("keeps Morado, Magenta and Rosa as separate colors", () => {
     const hueOf = (hex: string) => {
       const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
       const max = Math.max(r, g, b), d = max - Math.min(r, g, b);
@@ -60,6 +60,11 @@ describe("Selectable palettes", () => {
     expect(hueOf(purple.accent)).toBeLessThan(285);
     expect(hueOf(pink.accent)).toBeGreaterThan(310);
     expect(hueOf(pink.accent)).toBeLessThan(340);
+    // Magenta sits between them, clearly apart from both.
+    const magenta = getTheme("magenta");
+    expect(magenta.name).toBe("Magenta");
+    expect(hueOf(magenta.accent)).toBeGreaterThan(hueOf(purple.accent) + 20);
+    expect(hueOf(magenta.accent)).toBeLessThan(hueOf(pink.accent) - 20);
   });
   it("falls back safely for old or invalid preferences", () => {
     for (const value of [undefined, null, "unknown", 42, {}])
@@ -73,11 +78,11 @@ describe("Icon per palette", () => {
     expect(manifestFile("mint")).toBe("manifest.webmanifest");
   });
   it.each(themes)("ships every $name icon file", (t) => {
-    for (const file of ["icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "maskable-512.png"])
+    for (const file of ["icon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "maskable-512.png", "favicon.svg", "favicon.ico"])
       expect(existsSync(`public/${iconFolder(t.id)}${file}`)).toBe(true);
   });
   it("points the tab icon, iOS icon and manifest at the chosen color", () => {
-    const links = new Map(["icon", "apple-touch-icon", "manifest"].map((rel) => [`link[rel="${rel}"]`, { href: "" }]));
+    const links = new Map(['link[rel="icon"][type="image/svg+xml"]', 'link[rel="icon"][sizes]', 'link[rel="apple-touch-icon"]', 'link[rel="manifest"]'].map((selector) => [selector, { href: "" }]));
     vi.stubGlobal("document", {
       querySelector: (selector: string) => {
         const link = links.get(selector);
@@ -86,7 +91,8 @@ describe("Icon per palette", () => {
     });
     linkThemeIcons("pink", (path) => `/pulse-road/${path}`);
     expect([...links.values()].map((link) => link.href)).toEqual([
-      "/pulse-road/icons/themes/pink/icon.svg",
+      "/pulse-road/icons/themes/pink/favicon.svg",
+      "/pulse-road/icons/themes/pink/favicon.ico",
       "/pulse-road/icons/themes/pink/apple-touch-icon.png",
       "/pulse-road/manifest-pink.webmanifest",
     ]);

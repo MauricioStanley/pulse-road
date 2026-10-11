@@ -41,7 +41,8 @@ describe("Ultralight budgets and compatibility",()=>{
     });
     runInContext('Map=undefined;Set=undefined;Promise=undefined;Array.prototype.find=undefined;Array.prototype.includes=undefined;Number.isFinite=undefined;Object.assign=undefined;',scope);
     expect(()=>runInContext(bundle,scope)).not.toThrow();
-    expect(nodes['link[rel="icon"]'].getAttribute("href")).toBe("icons/icon.svg");
+    expect(nodes['link[rel="icon"][type="image/svg+xml"]'].getAttribute("href")).toBe("icons/favicon.svg");
+    expect(nodes['link[rel="icon"][sizes]'].getAttribute("href")).toBe("icons/favicon.ico");
     expect(nodes['link[rel="manifest"]'].getAttribute("href")).toBe("manifest.webmanifest");
     expect(nodes.panel.innerHTML).toContain("Menos efectos. El mismo ritmo.");
     expect(storage["pulse-render-mode"]).toBe("lite");

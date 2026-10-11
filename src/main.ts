@@ -137,7 +137,7 @@ const tutorialTitles: Record<string, string[]> = {
 const tutorialCopy: Record<string, string[]> = {
   buttons: ["Adelántate: colócate antes de que llegue.", "La pelota aterriza sola. Quédate en el carril.", "Puedes ir al centro con el botón de abajo."],
   drag: ["La pantalla tiene tres columnas invisibles.", "Puedes arrastrar sin levantar el dedo.", "El tercio central de la pantalla es el centro."],
-  swipe: ["Cada deslizamiento mueve un carril.", "Un deslizamiento largo cruza dos carriles.", "Adelántate: colócate antes de que llegue."],
+  swipe: ["Cada deslizamiento mueve un carril.", "Para cruzar dos carriles, desliza dos veces.", "Adelántate: colócate antes de que llegue."],
 };
 const tutorialTail = [["Elige el camino libre", "Los pinchos no son tu camino."], ["Sigue el pulso", "Los aciertos seguidos forman tu combo."], ["Un acierto más", "Ya casi estás listo."]];
 const endlessRun = () => (run instanceof EndlessRun ? run : null);
@@ -1245,14 +1245,13 @@ function touchSteer(e: PointerEvent, phase: "down" | "move") {
       dragLane = lane;
       tap(lane);
     }
-  } else if (phase === "down") swipe.down(x);
-  else {
-    const step = swipe.move(x);
-    if (step) {
-      const lane = stepLane(controlLane, step);
-      if (lane !== controlLane) tap(lane);
-    }
-  }
+  } else if (phase === "down") swipe.down(x, e.clientY);
+  else swipeStep(swipe.move(x, e.clientY));
+}
+function swipeStep(step: -1 | 0 | 1) {
+  if (!step) return;
+  const lane = stepLane(controlLane, step);
+  if (lane !== controlLane) tap(lane);
 }
 touchLayer.addEventListener("pointerdown", (e) => {
   try {
@@ -1265,12 +1264,15 @@ touchLayer.addEventListener("pointerdown", (e) => {
 touchLayer.addEventListener("pointermove", (e) => {
   if (e.buttons || e.pointerType === "touch") touchSteer(e, "move");
 });
-const release = () => {
+touchLayer.addEventListener("pointerup", (e) => {
+  if (e.isPrimary && settings.controls === "swipe") swipeStep(swipe.up(e.clientX - touchLayer.getBoundingClientRect().left, e.clientY));
+  else swipe.up();
+  dragLane = null;
+});
+touchLayer.addEventListener("pointercancel", () => {
   swipe.up();
   dragLane = null;
-};
-touchLayer.addEventListener("pointerup", release);
-touchLayer.addEventListener("pointercancel", release);
+});
 document.addEventListener("keydown", (e) => {
   if (dialog.open || e.repeat || e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   const keys: Record<string, Lane> = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2, a: 0, s: 1, d: 2 };
