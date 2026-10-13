@@ -14,6 +14,8 @@ export interface Settings {
   skin: SkinId;
   controls: ControlMode;
   ghost: boolean;
+  /** Soft taps on buttons and options outside the game. */
+  uiSounds: boolean;
   homeTab: HomeTab;
 }
 export type HomeTab = "song" | "endless" | "daily";
@@ -28,6 +30,7 @@ const defaultSettings: Settings = {
   skin: "classic",
   controls: "buttons",
   ghost: true,
+  uiSounds: true,
   homeTab: "song",
 };
 export let storageAvailable = true;
@@ -54,7 +57,7 @@ if (saved && typeof saved === "object") {
   settings.skin = getSkin(saved.skin).id;
   settings.controls = getControlMode(saved.controls);
   if (saved.homeTab === "endless" || saved.homeTab === "daily") settings.homeTab = saved.homeTab;
-  for (const key of ["sound", "vibration", "reduced", "tutorial", "ghost"] as const)
+  for (const key of ["sound", "vibration", "reduced", "tutorial", "ghost", "uiSounds"] as const)
     if (typeof saved[key] === "boolean") settings[key] = saved[key];
   if (Number.isFinite(saved.offset))
     settings.offset = Math.max(-200, Math.min(200, saved.offset));

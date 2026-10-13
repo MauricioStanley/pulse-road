@@ -18,7 +18,7 @@ import { checkName, nameProblems, NAME_MAX } from "./core/names";
 import { nextRival, placeFor } from "./core/rivals";
 import {
   cachedBoard, fetchBoard, flushPending, rankingName, RankingError, setRankingName, submitRun,
-  type Board, type RankedRun, type RankRow, type Submitted,
+  type Board, type BoardKind, type RankedRun, type RankRow, type Submitted,
 } from "./ranking";
 import { Conductor } from "./audio/conductor";
 import { RoadScene } from "./game/RoadScene";
@@ -224,20 +224,21 @@ function levelPicker() {
 const perkLine = (skin: Skin) =>
   `<button class="orb-perk" id="perk-button"><span class="perk-orb" style="background:${skin.preview}"></span><span><b>${skin.name}</b> · ${skin.perk}</span>${icon("arrow")}</button>`;
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-function rankChipText(board = cachedBoard()) {
+function rankChipText(board?: Board) {
   return board?.me ? `<b>#${board.me.rank}</b><span>de ${fmt(board.total)}</span>` : "<b>Ranking</b>";
 }
-const rankChip = () => `<button class="rank-chip" id="ranking-button" aria-label="Ver el ranking de Infinito">${icon("trophy")}<span id="rank-chip-text">${rankChipText()}</span></button>`;
+const rankChip = (which: BoardKind) =>
+  `<button class="rank-chip" id="ranking-button" data-board="${which}" aria-label="Ver el ranking ${which === "daily" ? "del reto de hoy" : "de Infinito"}">${icon("trophy")}<span id="rank-chip-text">${rankChipText(cachedBoard(which, dayKey()))}</span></button>`;
 function modePanel() {
   if (kind === "song") return levelPicker();
   const skin = activeSkin();
   if (kind === "endless") {
     const best = endlessBest();
-    return `<div class="mode-card"><div class="mode-card-head">${icon("infinity")}<div><strong>Infinito</strong><small>La canción acelera cada 16 s. ¿Hasta qué etapa llegas?</small></div>${rankChip()}</div><div class="mode-meta"><div class="mode-stats"><span>Mejor etapa <b>${best.stage || "—"}</b></span><span>Récord <b>${fmt(best.score)}</b></span></div><div class="power-legend" aria-label="Potenciadores">${(["shield", "heart", "double", "slow"] as const).map((p) => `<span class="power-dot ${p}" title="${powerNames[p]}: ${powerHints[p]}" role="img" aria-label="${powerNames[p]}: ${powerHints[p]}">${powerIcon(p)}</span>`).join("")}</div></div>${perkLine(skin)}</div>`;
+    return `<div class="mode-card"><div class="mode-card-head">${icon("infinity")}<div><strong>Infinito</strong><small>La canción acelera cada 16 s. ¿Hasta qué etapa llegas?</small></div>${rankChip("endless")}</div><div class="mode-meta"><div class="mode-stats"><span>Mejor etapa <b>${best.stage || "—"}</b></span><span>Récord <b>${fmt(best.score)}</b></span></div><div class="power-legend" aria-label="Potenciadores">${(["shield", "heart", "double", "slow"] as const).map((p) => `<span class="power-dot ${p}" title="${powerNames[p]}: ${powerHints[p]}" role="img" aria-label="${powerNames[p]}: ${powerHints[p]}">${powerIcon(p)}</span>`).join("")}</div></div>${perkLine(skin)}</div>`;
   }
   const best = dailyBest(today);
   const date = new Date().toLocaleDateString("es", { day: "numeric", month: "long" });
-  return `<div class="mode-card daily"><div class="mode-card-head">${icon("calendar")}<div><strong>Reto del ${date}</strong><small>El mismo recorrido para todos, solo hoy.</small></div></div><div class="mode-stats">${best.score ? `<span>Hoy: etapa <b>${best.stage}</b></span><span>Récord de hoy <b>${fmt(best.score)}</b></span>` : "<span>Aún no juegas el reto de hoy.</span>"}</div>${perkLine(skin)}</div>`;
+  return `<div class="mode-card daily"><div class="mode-card-head">${icon("calendar")}<div><strong>Reto de hoy</strong><small>${date} · El mismo recorrido para todos.</small></div>${rankChip("daily")}</div><div class="mode-stats">${best.score ? `<span>Hoy: etapa <b>${best.stage}</b></span><span>Récord de hoy <b>${fmt(best.score)}</b></span>` : "<span>Aún no juegas el reto de hoy.</span>"}</div>${perkLine(skin)}</div>`;
 }
 function streakLine() {
   const { count, playedToday } = streakToday(dayKey());
@@ -274,6 +275,7 @@ function home() {
       settings.homeTab = kind;
       saveSettings();
       home();
+      screen.querySelector(".mode-panel")?.classList.add("enter");
       screen.querySelector<HTMLButtonElement>(`.mode-tabs [data-kind="${kind}"]`)?.focus({ preventScroll: true });
     };
     tab.onkeydown = (event) => {
@@ -296,9 +298,10 @@ function home() {
   $("#missions-button").onclick = missionsDialog;
   const rankButton = document.getElementById("ranking-button");
   if (rankButton) {
-    rankButton.onclick = rankingDialog;
+    const which = rankButton.dataset.board === "daily" ? "daily" : "endless";
+    rankButton.onclick = () => rankingDialog(which);
     // Refresh the position quietly; the cached one shows meanwhile.
-    fetchBoard()
+    fetchBoard(which, 50, today)
       .then((board) => {
         const text = document.getElementById("rank-chip-text");
         if (text && mode === "home") text.innerHTML = rankChipText(board);
@@ -377,6 +380,7 @@ function resetRun() {
   rivalBoard = null;
   rival = undefined;
   rankGeneration++;
+  lastHeartbeat = -1;
   $("#power-row").innerHTML = "";
   scene.reset();
   feedback.textContent = "";
@@ -420,15 +424,14 @@ function beginEndless(daily: boolean) {
   const best = daily ? dailyBest(today) : endlessBest();
   recordAtStart = best.score;
   bestStageAtStart = best.stage;
-  if (!daily) {
-    rivalBoard = cachedBoard() ?? null;
-    const generation = rankGeneration;
-    fetchBoard(100)
-      .then((board) => {
-        if (generation === rankGeneration) rivalBoard = board;
-      })
-      .catch(() => {});
-  }
+  const list: BoardKind = daily ? "daily" : "endless";
+  rivalBoard = cachedBoard(list, today) ?? null;
+  const generation = rankGeneration;
+  fetchBoard(list, 100, today)
+    .then((board) => {
+      if (generation === rankGeneration) rivalBoard = board;
+    })
+    .catch(() => {});
   audio.setKey(ENDLESS_TRACK.root, ENDLESS_TRACK.minor);
   updateBestMarker();
   $("#phase").textContent = `${daily ? "RETO DIARIO" : "INFINITO"} · ETAPA 1`;
@@ -503,8 +506,8 @@ function onPower(hit: Hit) {
   const power = hit.power!;
   if (power === "slow") slowUntil = Math.max(slowUntil, hit.note.time) + POWER_SECONDS * perks.powerDuration;
   announce(powerNames[power], "power", 1200);
-  audio.rise(4);
-  vibrate(20);
+  audio.power(power);
+  vibrate([15, 40, 15]);
 }
 function hitFeedback(hit: Hit) {
   const title = hit.shielded ? "¡Escudo!" : hit.saved ? "¡Salvado!" : hit.judgment === "perfect" ? "Perfecto" : hit.judgment === "good" ? "Bien" : "Fallo";
@@ -514,9 +517,13 @@ function hitFeedback(hit: Hit) {
   feedbackUntil = performance.now() + 520;
   scene.hit(hit.note.lane, hit.judgment, settings.reduced, hit.crystal, { relic: !!hit.relic, power: hit.power, shielded: hit.shielded, saved: hit.saved });
   if (hit.judgment === "miss") {
-    if (hit.shielded) audio.rise(3);
+    if (hit.shielded) audio.guard();
+    else if (hit.saved) audio.saved();
     else audio.tick("miss");
-  } else audio.hit(hit.judgment, run.combo);
+  } else {
+    audio.hit(hit.judgment, run.combo);
+    if (hit.crystal) audio.crystal();
+  }
   if (hit.relic) relicFound(hit.relic as RelicId);
   if (hit.power) onPower(hit);
   const multiplier = run.multiplier;
@@ -616,13 +623,14 @@ function updateHUD() {
       delta.className = diff >= 0 ? "ahead" : "behind";
     }
   }
-  if (kind === "endless" && rivalBoard) updateRival(rivalBoard);
+  if (kind !== "song" && rivalBoard) updateRival(rivalBoard);
 }
 function updateRival(board: Board) {
   const next = nextRival(board.top, run.score), line = $("#rival");
   if (rival && run.score > rival.score && mode === "playing") {
     const place = placeFor(board.top, run.score, board.total);
     announce(`¡Superaste a ${rival.name}!${place ? ` Vas #${place}` : ""}`, "record", 1500);
+    audio.overtake();
     vibrate([12, 40, 12]);
   }
   rival = next;
@@ -634,6 +642,16 @@ function updateRival(board: Board) {
     line.textContent = "#1 del ranking";
     line.className = "rival top";
   } else line.textContent = "";
+}
+/** Low energy: a quiet heartbeat every two beats, in time with the edge glow. */
+let lastHeartbeat = -1;
+function heartbeatFrame(t: number) {
+  if (run.energy > 40) return;
+  const bpm = road ? ENDLESS_TRACK.bpm : level.bpm;
+  const beat = Math.floor((t * bpm) / 120);
+  if (beat === lastHeartbeat) return;
+  lastHeartbeat = beat;
+  audio.heartbeat((40 - run.energy) / 40);
 }
 function die() {
   if (mode !== "playing") return;
@@ -673,11 +691,17 @@ async function share(text: string) {
 function countUp(node: HTMLElement, value: number) {
   if (settings.reduced || value <= 0) return;
   const start = performance.now(), duration = 850;
+  let lastTick = 0;
   const step = () => {
     if (!node.isConnected) return;
-    const k = Math.min(1, (performance.now() - start) / duration);
+    const now = performance.now(), k = Math.min(1, (now - start) / duration);
     node.textContent = fmt(Math.round(value * (1 - (1 - k) ** 3)));
+    if (k < 1 && now - lastTick > 60) {
+      lastTick = now;
+      audio.countTick(k);
+    }
     if (k < 1) requestAnimationFrame(step);
+    else bump(node);
   };
   node.textContent = "0";
   requestAnimationFrame(step);
@@ -753,7 +777,7 @@ function finishRun(completed: boolean) {
   const statsRow = endless
     ? `<div><strong>${run.accuracy}%</strong><span>Precisión</span></div><div><strong>${run.maxCombo}</strong><span>Combo máx.</span></div><div><strong>${endless.powers}</strong><span>Potenciadores</span></div>`
     : `<div><strong>${run.accuracy}%</strong><span>Precisión</span></div><div><strong>${run.maxCombo}</strong><span>Combo máx.</span></div><div><strong>${run.crystals}</strong><span>Cristales</span></div>`;
-  screen.innerHTML = `<div class="results-panel ${completed ? "won" : "lost"}"><div class="result-symbol">${icon(completed ? "trophy" : "replay")}</div><h2>${completed ? "¡Camino completo!" : lastLoss}</h2><p>${subtitle}</p>${headline}<div class="final-score" id="final-score">${fmt(run.score)}</div><div class="record-status">${recordText}</div><div class="result-stats">${statsRow}</div>${kind === "endless" ? '<div class="rank-card" id="rank-card" aria-live="polite"></div>' : ""}<div class="judgment-summary"><span><i class="perfect-dot"></i>${run.perfect} perfectos</span><span>${run.good} buenos</span><span>${run.misses} fallos</span></div><div class="rewards">${rows.join("")}</div><div class="results-actions"><button class="primary" id="replay-button">${icon("replay")}Volver a jugar</button><div class="result-links"><button class="text-button" id="back-home">${icon("home")}Inicio</button>${canShare ? `<button class="text-button" id="share-button">${icon("share")}Compartir</button>` : ""}</div></div>${!storageAvailable ? '<p class="storage-note">El navegador no permite guardar tu progreso.</p>' : ""}</div>`;
+  screen.innerHTML = `<div class="results-panel ${completed ? "won" : "lost"}"><div class="result-symbol">${icon(completed ? "trophy" : "replay")}</div><h2>${completed ? "¡Camino completo!" : lastLoss}</h2><p>${subtitle}</p>${headline}<div class="final-score" id="final-score">${fmt(run.score)}</div><div class="record-status">${recordText}</div><div class="result-stats">${statsRow}</div>${kind !== "song" ? '<div class="rank-card" id="rank-card" aria-live="polite"></div>' : ""}<div class="judgment-summary"><span><i class="perfect-dot"></i>${run.perfect} perfectos</span><span>${run.good} buenos</span><span>${run.misses} fallos</span></div><div class="rewards">${rows.join("")}</div><div class="results-actions"><button class="primary" id="replay-button">${icon("replay")}Volver a jugar</button><div class="result-links"><button class="text-button" id="back-home">${icon("home")}Inicio</button>${canShare ? `<button class="text-button" id="share-button">${icon("share")}Compartir</button>` : ""}</div></div>${!storageAvailable ? '<p class="storage-note">El navegador no permite guardar tu progreso.</p>' : ""}</div>`;
   $("#replay-button").onclick = () => void resumeAudioAnd(() => begin(kind));
   $("#back-home").onclick = home;
   $("#share-button")?.addEventListener("click", () => void share(shareText(completed, percent)));
@@ -768,7 +792,7 @@ function finishRun(completed: boolean) {
       });
     };
   });
-  if (kind === "endless") void rankResults({ score: run.score, stage, seconds: deathTime, skin: settings.skin });
+  if (kind !== "song") void rankResults({ score: run.score, stage, seconds: deathTime, skin: settings.skin }, kind === "daily" ? "daily" : "endless", today);
   countUp($("#final-score"), run.score);
   if (completed && !settings.reduced && !endless)
     for (let i = 0; i < run.stars; i++) window.setTimeout(() => audio.star(i), 380 + i * 180);
@@ -793,10 +817,12 @@ function pause(reason = "Tu ritmo puede esperar") {
   if (mode !== "countdown") pauseMode = mode === "tutorial" ? "tutorial" : "playing";
   if (mode === "tutorial") tutorialTime = performance.now() / 1000 - tutorialStarted;
   pausedAt = audio.pause();
+  audio.blip(false);
   setMode("paused");
   screen.innerHTML = `<div class="center-panel pause-panel"><div class="pause-symbol">${icon("pause")}</div><h2>En pausa</h2><p>${reason}</p><button class="primary" id="continue-button">${icon("play")}Continuar</button><button class="secondary" id="restart-button">${icon("replay")}Empezar de nuevo</button><button class="text-button" id="pause-settings">Ajustes</button><button class="text-button" id="pause-home">Volver al inicio</button></div>`;
   $("#continue-button").onclick = () =>
-    void resumeAudioAnd(() =>
+    void resumeAudioAnd(() => {
+      audio.blip(true);
       countdown(() => {
         if (pauseMode === "tutorial") {
           tutorialStarted = performance.now() / 1000 - tutorialTime;
@@ -806,8 +832,8 @@ function pause(reason = "Tu ritmo puede esperar") {
           audio.play(pausedAt, silentMode);
           setMode("playing");
         }
-      }),
-    );
+      });
+    });
   $("#restart-button").onclick = () => void resumeAudioAnd(() => (pauseMode === "tutorial" ? beginTutorial() : begin(kind)));
   $("#pause-settings").onclick = openSettings;
   $("#pause-home").onclick = home;
@@ -874,14 +900,21 @@ function frame() {
     if (hits.length) updateHUD();
     if (road) endlessFrame(t);
     else songFrame(t, judged);
+    heartbeatFrame(t);
     if (run.dead) die();
   } else if (mode === "countdown") {
     const n = Math.ceil((countdownEnd - performance.now()) / COUNT_STEP);
-    if (n <= 0) countAction();
+    if (n <= 0) {
+      audio.go();
+      vibrate(25);
+      countAction();
+    }
     else if (n !== lastCount) {
       lastCount = n;
       $("#countdown strong").textContent = String(n);
+      bump($("#countdown strong"));
       audio.tick("count");
+      vibrate(8);
     }
   } else if (mode === "tutorial") {
     tutorialTime = performance.now() / 1000 - tutorialStarted;
@@ -960,7 +993,7 @@ function openSettings() {
   if (["playing", "tutorial", "countdown"].includes(mode)) pause();
   showDialog(
     "A tu ritmo",
-    `<p class="dialog-intro">Los ajustes se guardan en este dispositivo.</p>${controlPicker()}${themePicker()}<label class="setting-row"><span><strong>Fantasma de tu récord</strong><small>Una esfera translúcida repite tu mejor partida de cada canción</small></span><input type="checkbox" id="ghost-setting" ${settings.ghost ? "checked" : ""}/></label><label class="setting-row"><span><strong>Sonido</strong><small>Música y efectos de la partida</small></span><input type="checkbox" id="sound-setting" ${settings.sound ? "checked" : ""}/></label><label class="setting-row"><span><strong>Vibración</strong><small>${typeof navigator.vibrate === "function" ? "Un pequeño pulso al tocar" : "No disponible en este navegador"}</small></span><input type="checkbox" id="vibration-setting" ${settings.vibration ? "checked" : ""} ${typeof navigator.vibrate !== "function" ? "disabled" : ""}/></label><label class="setting-row"><span><strong>Efectos reducidos</strong><small>Sin partículas, pulsos, sacudidas ni destellos</small></span><input type="checkbox" id="reduced-setting" ${settings.reduced ? "checked" : ""}/></label><div class="sync-setting"><label for="offset-setting">Sincronización <output id="offset-value">${settings.offset} ms</output></label><p>Si el sonido llega tarde, mueve el ajuste a la derecha. La pista visual se retrasará junto con los toques.</p><input type="range" min="-200" max="200" step="10" value="${settings.offset}" id="offset-setting"/><div class="range-labels"><span>−200 ms</span><button class="text-button" id="reset-offset">Restablecer</button><span>+200 ms</span></div></div><button class="secondary full" id="practice-button">Repetir tutorial</button><a class="secondary full" href="${assetUrl("lite.html")}">Activar modo ultraligero</a><p class="dialog-note">Ultraligero, para celulares antiguos: dibujo 2D sin efectos. Conserva canciones, récords y cristales; no incluye Infinito ni reto diario.</p>`,
+    `<p class="dialog-intro">Los ajustes se guardan en este dispositivo.</p>${controlPicker()}${themePicker()}<label class="setting-row"><span><strong>Fantasma de tu récord</strong><small>Una esfera translúcida repite tu mejor partida de cada canción</small></span><input type="checkbox" id="ghost-setting" ${settings.ghost ? "checked" : ""}/></label><label class="setting-row"><span><strong>Sonido</strong><small>Música y efectos de la partida</small></span><input type="checkbox" id="sound-setting" ${settings.sound ? "checked" : ""}/></label><label class="setting-row"><span><strong>Sonidos del menú</strong><small>Toques suaves al usar botones y opciones</small></span><input type="checkbox" id="ui-sound-setting" ${settings.uiSounds ? "checked" : ""}/></label><label class="setting-row"><span><strong>Vibración</strong><small>${typeof navigator.vibrate === "function" ? "Un pequeño pulso al tocar" : "No disponible en este navegador"}</small></span><input type="checkbox" id="vibration-setting" ${settings.vibration ? "checked" : ""} ${typeof navigator.vibrate !== "function" ? "disabled" : ""}/></label><label class="setting-row"><span><strong>Efectos reducidos</strong><small>Sin partículas, pulsos, sacudidas ni destellos</small></span><input type="checkbox" id="reduced-setting" ${settings.reduced ? "checked" : ""}/></label><div class="sync-setting"><label for="offset-setting">Sincronización <output id="offset-value">${settings.offset} ms</output></label><p>Si el sonido llega tarde, mueve el ajuste a la derecha. La pista visual se retrasará junto con los toques.</p><input type="range" min="-200" max="200" step="10" value="${settings.offset}" id="offset-setting"/><div class="range-labels"><span>−200 ms</span><button class="text-button" id="reset-offset">Restablecer</button><span>+200 ms</span></div></div><button class="secondary full" id="practice-button">Repetir tutorial</button><a class="secondary full" href="${assetUrl("lite.html")}">Activar modo ultraligero</a><p class="dialog-note">Ultraligero, para celulares antiguos: dibujo 2D sin efectos. Conserva canciones, récords y cristales; no incluye Infinito ni reto diario.</p>`,
   );
   dialog.querySelectorAll<HTMLInputElement>('input[name="theme"]').forEach((input) => {
     input.onchange = () => {
@@ -977,7 +1010,7 @@ function openSettings() {
       setMode(mode);
     };
   });
-  for (const [id, key] of [["sound-setting", "sound"], ["vibration-setting", "vibration"], ["reduced-setting", "reduced"], ["ghost-setting", "ghost"]] as const) {
+  for (const [id, key] of [["sound-setting", "sound"], ["vibration-setting", "vibration"], ["reduced-setting", "reduced"], ["ghost-setting", "ghost"], ["ui-sound-setting", "uiSounds"]] as const) {
     $<HTMLInputElement>(`#${id}`).onchange = (e) => {
       settings[key] = (e.target as HTMLInputElement).checked;
       saveSettings();
@@ -1064,15 +1097,17 @@ function revenge(result: Submitted) {
     return `<small class="rank-next">Te faltan <b>${fmt(above.score - result.best + 1)}</b> puntos para pasar a ${escapeHtml(above.name)} (#${above.rank}).</small>`;
   return result.rank === 1 && result.total > 1 ? '<small class="rank-next">Estás en la cima. Defiende tu puesto.</small>' : "";
 }
-async function rankResults(entry: RankedRun) {
+const listName = (which: BoardKind) => (which === "daily" ? "del reto de hoy" : "de Infinito");
+async function rankResults(entry: RankedRun, which: BoardKind, day: string) {
   const card = document.getElementById("rank-card");
   if (!card) return;
   const generation = rankGeneration;
+  const again = () => void rankResults(entry, which, day);
   const open = `<button class="text-button" id="rank-open">Ver ranking ${icon("arrow")}</button>`;
-  const wire = () => document.getElementById("rank-open")?.addEventListener("click", rankingDialog);
+  const wire = () => document.getElementById("rank-open")?.addEventListener("click", () => rankingDialog(which));
   if (!rankingName()) {
-    card.innerHTML = nameForm(entry.score > 0 ? "Elige un nombre y entra al ranking de Infinito" : "Elige tu nombre para el ranking de Infinito");
-    wireNameForm(card, () => void rankResults(entry));
+    card.innerHTML = nameForm(entry.score > 0 ? `Elige un nombre y entra al ranking ${listName(which)}` : `Elige tu nombre para el ranking ${listName(which)}`);
+    wireNameForm(card, again);
     return;
   }
   if (entry.score <= 0) {
@@ -1082,7 +1117,7 @@ async function rankResults(entry: RankedRun) {
   }
   card.innerHTML = `<div class="rank-result">${icon("trophy")}<span>Enviando al ranking…</span></div>`;
   try {
-    const result = await submitRun(entry);
+    const result = await submitRun(entry, which, day);
     if (generation !== rankGeneration || !card.isConnected) return;
     card.innerHTML = rankSummary(result, entry.score) + revenge(result) + open;
     if (result.improved && result.rank <= 3) audio.fanfare();
@@ -1091,7 +1126,7 @@ async function rankResults(entry: RankedRun) {
     const problem = error instanceof RankingError ? error.problem : "offline";
     if (problem === "invalid_name") {
       card.innerHTML = nameForm("Ese nombre ya no se puede usar. Elige otro", rankingName());
-      wireNameForm(card, () => void rankResults(entry));
+      wireNameForm(card, again);
       return;
     }
     const text = problem === "invalid_run" ? "Esta partida no se pudo validar para el ranking." : "Sin conexión: se enviará cuando vuelvas a tener internet.";
@@ -1099,7 +1134,7 @@ async function rankResults(entry: RankedRun) {
   }
   wire();
 }
-function rankingBody(board: Board | undefined, state: "loading" | "ready" | "error", renaming = false) {
+function rankingBody(board: Board | undefined, state: "loading" | "ready" | "error", renaming: boolean, which: BoardKind) {
   const name = rankingName();
   const who = !name || renaming
     ? nameForm(name ? "Tu nuevo nombre" : "Elige tu nombre para aparecer en la lista", name)
@@ -1111,19 +1146,31 @@ function rankingBody(board: Board | undefined, state: "loading" | "ready" | "err
     .join("");
   const me = board.me;
   const mine = !me
-    ? "Juega Infinito con tu nombre para entrar a la lista."
+    ? `Juega ${which === "daily" ? "el reto de hoy" : "Infinito"} con tu nombre para entrar a la lista.`
     : board.top.some((row) => row.me)
-      ? `Eres el #${me.rank} de ${fmt(board.total)} jugadores.`
+      ? `Eres el #${me.rank} de ${fmt(board.total)} ${board.total === 1 ? "jugador" : "jugadores"}.`
       : `Tu posición: #${me.rank} de ${fmt(board.total)} · ${fmt(me.score)} puntos.`;
-  return `${who}${rows ? `<ol class="rank-list">${rows}</ol>` : '<p class="rank-empty">Aún no hay nadie. ¡Sé el primero!</p>'}<p class="rank-me">${mine}</p><p class="dialog-note">Cuenta tu mejor partida de Infinito en este dispositivo. El reto diario no entra en el ranking.${state === "loading" ? " Actualizando…" : state === "error" ? " Sin conexión: es la última lista guardada." : ""}</p>`;
+  return `${who}${rows ? `<ol class="rank-list">${rows}</ol>` : '<p class="rank-empty">Aún no hay nadie. ¡Sé el primero!</p>'}<p class="rank-me">${mine}</p><p class="dialog-note">${which === "daily" ? "Cuenta tu mejor partida del reto de hoy en este dispositivo. La lista empieza de cero cada día." : "Cuenta tu mejor partida de Infinito en este dispositivo."}${state === "loading" ? " Actualizando…" : state === "error" ? " Sin conexión: es la última lista guardada." : ""}</p>`;
 }
-function rankingDialog() {
-  let board = cachedBoard(), state: "loading" | "ready" | "error" = "loading", renaming = false;
-  showDialog("Ranking Infinito", '<div id="ranking-body" class="ranking-body"></div>', "wide");
+function rankingDialog(which: BoardKind = "endless") {
+  const day = dayKey();
+  let board = cachedBoard(which, day), state: "loading" | "ready" | "error" = "loading", renaming = false;
+  const tabs = ([["endless", "Infinito"], ["daily", "Reto de hoy"]] as const)
+    .map(([id, name]) => `<button role="tab" data-board="${id}" aria-selected="${id === which}">${name}</button>`)
+    .join("");
+  showDialog("Ranking", `<div class="mode-tabs rank-tabs" role="tablist" aria-label="Lista">${tabs}</div><div id="ranking-body" class="ranking-body"></div>`, "wide");
+  dialog.querySelectorAll<HTMLButtonElement>(".rank-tabs button").forEach((tab) => {
+    tab.onclick = () => {
+      which = tab.dataset.board === "daily" ? "daily" : "endless";
+      dialog.querySelectorAll(".rank-tabs button").forEach((other) => other.setAttribute("aria-selected", String(other === tab)));
+      board = cachedBoard(which, day);
+      refresh();
+    };
+  });
   const render = () => {
     const body = document.getElementById("ranking-body");
     if (!body || !dialog.open) return;
-    body.innerHTML = rankingBody(board, state, renaming);
+    body.innerHTML = rankingBody(board, state, renaming, which);
     wireNameForm(body, () => {
       renaming = false;
       refresh();
@@ -1141,8 +1188,10 @@ function rankingDialog() {
   const refresh = () => {
     state = "loading";
     render();
-    fetchBoard()
+    const asked = which;
+    fetchBoard(asked, 50, day)
       .then((fresh) => {
+        if (asked !== which) return;
         board = fresh;
         state = "ready";
       })
@@ -1204,7 +1253,7 @@ async function install() {
 function credits() {
   showDialog(
     "Detrás del pulso",
-    `<p><strong>Neo Rush</strong><br/>Un juego original para este proyecto.</p><p><strong>Cuatro pistas originales</strong><br/>Pequeña Órbita, First Light, Neon Sprint y Umbral Cero. Música y efectos sintetizados para el juego, sin muestras de terceros. Infinito repite First Light y la acelera.</p><p><strong>Reliquias del ritmo</strong><br/>Diez objetos musicales originales, dibujados para el juego: metrónomo, casete, diapasón, vinilo y más.</p><p><strong>Ranking de Infinito</strong><br/>En línea con Supabase. Solo guarda el nombre que eliges, tu mejor partida de Infinito y un código al azar de este dispositivo. Los nombres son públicos en la lista.</p><p><strong>Diseño y desarrollo</strong><br/>Proyecto creado con asistencia de Codex y Claude. Motor Phaser, tipografía Outfit y recursos gráficos originales.</p><p class="dialog-note">Inspirado en los juegos de ritmo. Sin recursos de Tiles Hop, Magic Tiles o Dancing Road. Licencias completas incluidas en el proyecto.</p>`,
+    `<p><strong>Neo Rush</strong><br/>Un juego original para este proyecto.</p><p><strong>Cuatro pistas originales</strong><br/>Pequeña Órbita, First Light, Neon Sprint y Umbral Cero. Música y efectos sintetizados para el juego, sin muestras de terceros. Infinito repite First Light y la acelera.</p><p><strong>Reliquias del ritmo</strong><br/>Diez objetos musicales originales, dibujados para el juego: metrónomo, casete, diapasón, vinilo y más.</p><p><strong>Rankings</strong><br/>En línea con Supabase. Solo guardan el nombre que eliges, tu mejor partida de Infinito y de cada reto diario, y un código al azar de este dispositivo. Los nombres son públicos en las listas.</p><p><strong>Diseño y desarrollo</strong><br/>Proyecto creado con asistencia de Codex y Claude. Motor Phaser, tipografía Outfit y recursos gráficos originales.</p><p class="dialog-note">Inspirado en los juegos de ritmo. Sin recursos de Tiles Hop, Magic Tiles o Dancing Road. Licencias completas incluidas en el proyecto.</p>`,
   );
 }
 $("#settings-button").onclick = openSettings;
@@ -1273,6 +1322,21 @@ touchLayer.addEventListener("pointercancel", () => {
   swipe.up();
   dragLane = null;
 });
+// Menu sounds: a soft tap on buttons and links, a toggle on switches and a
+// note on choices. Never during play: lane buttons and touch steering stay silent.
+document.addEventListener(
+  "click",
+  (e) => {
+    if (!settings.sound || !settings.uiSounds || !(e.target instanceof Element)) return;
+    if (e.target.closest("#lane-controls, #touch-layer, #pause-button")) return;
+    const control = e.target.closest("button, a, input, label");
+    // A label forwards its click to its input, which sounds on its own.
+    if (!control || (control instanceof HTMLLabelElement && control.querySelector("input"))) return;
+    const sound = control.matches('input[type="checkbox"]') ? "toggle" : control.matches('input[type="radio"]') ? "select" : "tap";
+    void audio.unlock().then(() => audio.ui(sound), () => {});
+  },
+  true,
+);
 document.addEventListener("keydown", (e) => {
   if (dialog.open || e.repeat || e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   const keys: Record<string, Lane> = { ArrowLeft: 0, ArrowDown: 1, ArrowRight: 2, a: 0, s: 1, d: 2 };

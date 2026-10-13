@@ -2750,3 +2750,66 @@
     color: var(--text);
   }
 }
+@layer components {
+  /* Press feedback: every control dips a little under the finger. */
+  button,
+  .level-choice,
+  .theme-choice,
+  .control-option > span,
+  .skin-option {
+    transition: transform 0.09s ease-out, background-color 0.15s;
+  }
+  button:active:not(:disabled),
+  .level-option:active .level-choice,
+  .theme-option:active .theme-choice,
+  .control-option:active > span,
+  .skin-option:active {
+    transform: scale(0.96);
+  }
+  .theme-option input:checked + .theme-choice .theme-swatch {
+    animation: swatch-pop 0.28s ease-out;
+  }
+  @keyframes swatch-pop {
+    40% { transform: scale(1.25); }
+  }
+  .mode-panel.enter {
+    animation: panel-in 0.22s ease-out;
+  }
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(8px); }
+  }
+  .rank-result {
+    animation: panel-in 0.25s ease-out;
+  }
+  .rank-tabs {
+    margin: 0 0 14px;
+  }
+  .rank-tabs button {
+    flex: 1;
+  }
+  .reduced button:active,
+  .reduced .level-option:active .level-choice,
+  .reduced .theme-option:active .theme-choice,
+  .reduced .control-option:active > span,
+  .reduced .skin-option:active {
+    transform: none;
+  }
+  .reduced .theme-option input:checked + .theme-choice .theme-swatch,
+  .reduced .mode-panel.enter,
+  .reduced .rank-result {
+    animation: none;
+  }
+}
+@layer components {
+  .countdown strong.bump,
+  .final-score.bump {
+    animation: score-pop 0.32s cubic-bezier(0.2, 1.4, 0.4, 1);
+  }
+  @keyframes score-pop {
+    40% { transform: scale(1.14); }
+  }
+  .reduced .countdown strong.bump,
+  .reduced .final-score.bump {
+    animation: none;
+  }
+}

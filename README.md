@@ -43,16 +43,16 @@ Pesadilla tiene 401 plataformas, ráfagas de hasta 6 por segundo y patrones fijo
 - **Infinito.** First Light en bucle, con etapas de 16 segundos. Cada etapa la canción acelera un 5 % (hasta ×1,6), las plataformas llegan antes, el daño sube y la recuperación baja. El recorrido se genera al azar con una semilla, siempre alineado con el pulso, sin plataformas simultáneas y sin saltos de un extremo al otro en corcheas antes de la etapa 5. En Infinito la Fiebre multiplica los puntos ×1,5.
 - **Reto diario.** Un Infinito cuyo recorrido depende de la fecha: todos los que juegan el mismo día reciben la misma pista. Guarda el mejor resultado del día.
 
-### Ranking de Infinito
+### Rankings de Infinito y del reto diario
 
-Infinito tiene una lista en línea compartida por todos los jugadores.
+Infinito y el reto diario tienen listas en línea compartidas por todos los jugadores. La del reto diario es una por día: empieza de cero cada día y todos juegan el mismo recorrido. El botón **Ranking** de cada modo abre la lista con una pestaña para cada una.
 
-- **Nombre.** Al terminar la primera partida de Infinito, o desde el botón **Ranking** de la portada, cada jugador elige un nombre de 3 a 16 caracteres: letras (con acentos y ñ), números, espacios, punto, guion y guion bajo. Se rechazan insultos comunes, también escritos con números (`p3nd3jo`). El nombre se puede cambiar en el ranking.
-- **Qué cuenta.** La mejor partida de Infinito de cada dispositivo. El reto diario y las canciones no entran.
+- **Nombre.** Al terminar la primera partida de Infinito o del reto, o desde el botón **Ranking** de la portada, cada jugador elige un nombre de 3 a 16 caracteres: letras (con acentos y ñ), números, espacios, punto, guion y guion bajo. Se rechazan insultos comunes, también escritos con números (`p3nd3jo`). El nombre es el mismo en las dos listas y se puede cambiar en el ranking.
+- **Qué cuenta.** La mejor partida de cada dispositivo: en Infinito, de siempre; en el reto, de ese día. Las canciones no entran.
 - **Durante la partida.** Bajo los puntos aparece el siguiente rival («#4 Ana · a 230») y, al superarlo, un aviso con el puesto que alcanzas.
 - **Resultados.** Tu puesto, si mejoraste, y cuántos puntos te faltan para pasar al siguiente jugador.
 - **Sin internet.** El juego nunca espera al servidor: la partida se guarda en el teléfono y se envía sola al volver la conexión.
-- **Servidor.** Proyecto de Supabase `neo-rush` (plan gratuito). La tabla está cerrada; el juego solo puede llamar a tres funciones que validan el nombre, que la puntuación sea posible para el tiempo jugado, y que no se envíe más de una partida cada 3 segundos por dispositivo. El esquema está en `supabase/ranking.sql`, con las consultas para revisar la lista y borrar un nombre.
+- **Servidor.** Proyecto de Supabase `neo-rush` (plan gratuito). Las tablas están cerradas; el juego solo puede llamar a funciones que validan el nombre, que el día del reto sea el actual, que la puntuación sea posible para el tiempo jugado, y que no se envíe más de una partida cada 3 segundos por dispositivo. El esquema está en `supabase/ranking.sql`, con las consultas para revisar la lista y borrar un nombre.
 - **Límites.** Sin cuentas, un jugador que borra los datos del navegador aparece como nuevo. La validación frena puntuaciones imposibles, pero no a alguien que fabrique una partida creíble. En el plan gratuito, Supabase pausa el proyecto tras una semana sin uso; se reactiva desde su panel.
 
 ### Potenciadores (Infinito y reto diario)
@@ -88,6 +88,8 @@ Cada Perfecto emite brillo y partículas; con efectos reducidos queda un anillo 
 - **El mundo late con la canción.** Bordes de la pista, cuadrícula, anillos del horizonte, estrellas y torres ecualizadoras a los lados reaccionan a cada golpe de bombo, con la intensidad de cada sección. Al empezar una sección nueva, una onda recorre la pista.
 - **Saltos que avanzan.** La esfera siempre vuela de una plataforma a la siguiente: el arco cubre todo el espacio entre ambas (hasta un segundo), se adelanta un poco por la pista mientras la plataforma llega y se encoge con la perspectiva. Su sombra se queda en el suelo y la cámara la acompaña levemente. La plataforma que deja sigue de largo por debajo, así se ve que avanza en vez de saltar en el sitio.
 - **Aterrizajes con peso.** La esfera se aplasta al caer y se estira al subir y al bajar; la plataforma se ilumina y se hunde, y un anillo se expande. Los saltos son más altos cuanto más separadas están las plataformas. La plataforma fallada se agrieta y cae.
+- **Sonidos de cada momento.** Todo sintetizado en el navegador, sin muestras: cuenta regresiva con un acorde al empezar, destellos al tomar un cristal, un sonido propio para cada potenciador (escudo, corazón, puntos dobles y cámara lenta), un golpe metálico cuando el escudo absorbe un fallo, un ascenso cuando la Última luz te salva, un latido grave cada dos tiempos con poca energía, un barrido al superar a un rival del ranking, pausa y reanudación, y el conteo de la puntuación final, que sube de tono. En los menús, botones y opciones suenan con toques suaves; se desactivan en **Ajustes → Sonidos del menú**. Nada suena durante la partida al tocar los carriles.
+- **Respuesta al tacto.** Botones, tarjetas y opciones se hunden un poco al tocarlos; el color elegido rebota; al cambiar de modo el panel entra con una transición; la cuenta regresiva y la puntuación final laten. Con vibración activada: un pulso por aterrizaje, uno doble al fallar, patrones propios para potenciadores, rivales superados, la cuenta y el arranque. Con efectos reducidos no hay animaciones.
 - **Aciertos musicales.** Cada aterrizaje toca una nota de la escala pentatónica de la canción; el combo sube dos octavas y vuelve a empezar. Todo el sonido sigue siendo sintetizado.
 - **Fiebre.** Con 30 de combo (el multiplicador ×4) la pista se tiñe, aparecen líneas de velocidad y la estela se alarga. Los saltos a ×2 y ×3 también se anuncian. No cambia la puntuación: es la recompensa visible del ×4.
 - **Tensión.** Con 40 de energía o menos, los bordes de la pantalla laten en rojo al ritmo.
@@ -189,8 +191,8 @@ No se garantiza rendimiento ni compatibilidad en el Samsung S3 Mini físico: un 
 ## Estructura
 
 - `src/core/`: recorrido, puntuación y reglas independientes de gráficos: canciones (`chart.ts`, `rules.ts`), Infinito y reto diario (`endless.ts`), reliquias (`relics.ts`), misiones y nivel (`missions.ts`), fantasma (`ghost.ts`), racha (`streak.ts`), nombres del ranking (`names.ts`) y rival en vivo (`rivals.ts`).
-- `src/ranking.ts`: conexión con el ranking en línea, con partidas pendientes cuando no hay internet.
-- `supabase/ranking.sql`: tabla y funciones del ranking en Supabase.
+- `src/ranking.ts`: conexión con los rankings en línea (Infinito y reto diario), con partidas pendientes cuando no hay internet.
+- `supabase/ranking.sql`: tablas y funciones de los rankings en Supabase.
 - `src/entry.ts`: arranque ligero que recuerda el modo, sin cargar Phaser cuando no hace falta.
 - `src/lite/`: reproductor de bajo consumo y renderizador Canvas 2D, con las reglas compartidas.
 - `public/lite.html` y `public/lite.css`: interfaz clásica para dispositivos antiguos.

@@ -172,6 +172,33 @@ describe("Audio transport", () => {
     c.mute(true); c.hit("perfect", 3); c.rise(); c.fanfare(); c.star(0);
     expect(ctx.oscillators).toHaveLength(before);
   });
+  it("gives every new effect its own sound, cleans it up and stays silent when muted", async () => {
+    const c = new Conductor(); await c.unlock();
+    const ctx = FakeAudioContext.instance;
+    const effects: [string, () => void][] = [
+      ["tap", () => c.ui("tap")], ["toggle", () => c.ui("toggle")], ["select", () => c.ui("select")],
+      ["crystal", () => c.crystal()], ["shield", () => c.power("shield")], ["heart", () => c.power("heart")],
+      ["double", () => c.power("double")], ["slow", () => c.power("slow")], ["guard", () => c.guard()],
+      ["saved", () => c.saved()], ["go", () => c.go()], ["overtake", () => c.overtake()],
+      ["heartbeat", () => c.heartbeat(0.5)], ["count", () => c.countTick(0.5)], ["blip", () => c.blip(true)],
+    ];
+    const signatures = new Set<string>();
+    for (const [name, play] of effects) {
+      const before = ctx.oscillators.length;
+      play();
+      const made = ctx.oscillators.slice(before);
+      expect(made.length, name).toBeGreaterThan(0);
+      signatures.add(made.map((o) => `${o.type}:${Math.round(o.frequency.setValueAtTime.mock.calls[0][0])}`).join(","));
+      made.forEach((o) => o.onended?.());
+      made.forEach((o) => expect(o.disconnect).toHaveBeenCalled());
+    }
+    // Each power-up and event is recognizable by ear: no two share a sound.
+    expect(signatures.size).toBe(effects.length);
+    const before = ctx.oscillators.length;
+    c.mute(true);
+    for (const [, play] of effects) play();
+    expect(ctx.oscillators).toHaveLength(before);
+  });
   it("slows and fades only the music on a fall, and restores it on the next play", async () => {
     const c = new Conductor(); await c.unlock(); await c.load(() => {});
     const ctx = FakeAudioContext.instance;

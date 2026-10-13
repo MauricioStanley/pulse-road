@@ -91,6 +91,32 @@ describe("Ranking client", () => {
     expect(ranking.hasPending()).toBe(false);
     expect(calls.at(-1)?.body).toMatchObject({ p_score: 1500, p_name: "Ana" });
   });
+  it("keeps a separate daily list per day, with its own pending run", async () => {
+    let online = true;
+    const { calls } = setup((fn) => {
+      if (!online) throw new TypeError("Failed to fetch");
+      if (fn === "rename_endless") return json({ name: "Ana", listed: false });
+      if (fn === "daily_board") return json({ total: 1, top: [{ rank: 1, name: "Ana", score: 800, stage: 2, skin: "classic", me: true }], me: { rank: 1, name: "Ana", score: 800, stage: 2 } });
+      return json({ name: "Ana", best: 800, stage: 2, improved: true, rank: 1, total: 1 });
+    });
+    const ranking = await import("../src/ranking");
+    await ranking.setRankingName("Ana");
+    await ranking.fetchBoard("daily", 50, "2026-10-13");
+    expect(calls.at(-1)).toMatchObject({ fn: "daily_board", body: { p_day: "2026-10-13" } });
+    expect(ranking.cachedBoard("daily", "2026-10-13")?.me?.rank).toBe(1);
+    expect(ranking.cachedBoard("daily", "2026-10-14")).toBeUndefined();
+    expect(ranking.cachedBoard("endless")).toBeUndefined();
+    await ranking.submitRun(run, "daily", "2026-10-13");
+    expect(calls.at(-1)).toMatchObject({ fn: "submit_daily", body: { p_day: "2026-10-13", p_name: "Ana" } });
+    online = false;
+    await expect(ranking.submitRun(run, "daily", "2026-10-13")).rejects.toMatchObject({ problem: "offline" });
+    expect(ranking.hasPending("daily")).toBe(true);
+    expect(ranking.hasPending("endless")).toBe(false);
+    online = true;
+    await ranking.flushPending();
+    expect(ranking.hasPending("daily")).toBe(false);
+    expect(calls.at(-1)).toMatchObject({ fn: "submit_daily", body: { p_day: "2026-10-13" } });
+  });
   it("reports server refusals and never retries an impossible run", async () => {
     setup((fn, body) =>
       fn === "rename_endless" ? json({ name: String(body.p_name), listed: false }) : json({ code: "22023", message: "invalid_run" }, 400));

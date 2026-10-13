@@ -267,6 +267,102 @@ export class Conductor {
       level.disconnect();
     };
   }
+/** One enveloped oscillator on the effects bus, optionally sliding in pitch. */
+  private tone(freq: number, type: OscillatorType, level: number, at: number, decay: number, toFreq?: number) {
+    const ctx = this.context!;
+    const osc = ctx.createOscillator();
+    const envelope = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, at);
+    if (toFreq) osc.frequency.exponentialRampToValueAtTime(toFreq, at + decay);
+    envelope.gain.setValueAtTime(0.0001, at);
+    envelope.gain.exponentialRampToValueAtTime(level, at + 0.006);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, at + decay);
+    osc.connect(envelope);
+    envelope.connect(this.fx!);
+    osc.start(at);
+    osc.stop(at + decay + 0.02);
+    osc.onended = () => {
+      osc.disconnect();
+      envelope.disconnect();
+    };
+  }
+  /** Menus: a soft tap, a toggle and a selection. */
+  ui(kind: "tap" | "toggle" | "select") {
+    if (!this.live) return;
+    const now = this.context!.currentTime;
+    if (kind === "tap") this.tone(1250, "sine", 0.018, now, 0.05);
+    else if (kind === "toggle") {
+      this.tone(700, "sine", 0.02, now, 0.05);
+      this.tone(1050, "sine", 0.02, now + 0.045, 0.06);
+    } else this.pluck(this.root + 24 + this.scale[2], 0.035, now, 0.22);
+  }
+  /** A crystal: two quick high sparkles after the landing note. */
+  crystal() {
+    if (!this.live) return;
+    const now = this.context!.currentTime + 0.03;
+    this.pluck(this.root + 31, 0.035, now, 0.16);
+    this.pluck(this.root + 36, 0.03, now + 0.05, 0.22);
+  }
+  /** Each power-up has its own sound, so it is recognized without looking. */
+  power(kind: "shield" | "heart" | "double" | "slow") {
+    if (!this.live) return;
+    const now = this.context!.currentTime;
+    if (kind === "shield") {
+      [0, 7, 12, 19].forEach((step, i) => this.tone(440 * 2 ** ((this.root + step - 69) / 12), "triangle", 0.03, now + i * 0.03, 0.35));
+    } else if (kind === "heart") {
+      this.pluck(this.root + 4, 0.05, now, 0.4);
+      this.pluck(this.root + 12, 0.05, now + 0.12, 0.5);
+    } else if (kind === "double") {
+      [0, 4, 7, 12, 16].forEach((step, i) => this.pluck(this.root + 12 + step, 0.035, now + i * 0.035, 0.2));
+    } else this.tone(880, "sine", 0.045, now, 0.55, 220);
+  }
+  /** A miss the shield absorbed: a bright metallic knock. */
+  guard() {
+    if (!this.live) return;
+    const now = this.context!.currentTime;
+    this.tone(1400, "square", 0.018, now, 0.08, 900);
+    this.tone(523, "triangle", 0.04, now, 0.3);
+  }
+  /** Last stand: a swell that rises out of the fall. */
+  saved() {
+    if (!this.live) return;
+    const now = this.context!.currentTime;
+    this.tone(160, "sawtooth", 0.025, now, 0.5, 640);
+    this.pluck(this.root + 19, 0.05, now + 0.35, 0.6);
+  }
+  /** End of the countdown: a bright chord on the downbeat. */
+  go() {
+    if (!this.live) return;
+    const now = this.context!.currentTime;
+    [0, this.scale[2], 7].forEach((interval) => this.pluck(this.root + 12 + interval, 0.04, now, 0.45));
+  }
+  /** Passing a player in the ranking: a quick whoosh up and a chime. */
+  overtake() {
+    if (!this.live) return;
+    const now = this.context!.currentTime;
+    this.tone(300, "sine", 0.03, now, 0.18, 1200);
+    this.pluck(this.root + 24 + this.scale[4], 0.045, now + 0.12, 0.35);
+  }
+  /** Low energy: a quiet lub-dub, louder the closer the fall. */
+  heartbeat(danger: number) {
+    if (!this.live) return;
+    const now = this.context!.currentTime;
+    const level = 0.04 + 0.08 * Math.max(0, Math.min(1, danger));
+    this.tone(70, "sine", level, now, 0.16, 45);
+    this.tone(62, "sine", level * 0.7, now + 0.17, 0.16, 40);
+  }
+  /** Results count-up: ticks that climb with the score. */
+  countTick(progress: number) {
+    if (!this.live) return;
+    this.tone(500 + 900 * Math.max(0, Math.min(1, progress)), "sine", 0.014, this.context!.currentTime, 0.04);
+  }
+  /** Pause and resume. */
+  blip(up: boolean) {
+    if (!this.live) return;
+    const now = this.context!.currentTime;
+    this.tone(up ? 520 : 780, "sine", 0.03, now, 0.12, up ? 780 : 520);
+  }
   tick(kind: "perfect" | "good" | "miss" | "count") {
     if (!this.context || this.muted || this.context.state !== "running") return;
     const osc = this.context.createOscillator();
